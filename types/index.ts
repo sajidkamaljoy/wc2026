@@ -1,0 +1,75 @@
+export type StageType =
+  | "GROUP"
+  | "ROUND_OF_32"
+  | "ROUND_OF_16"
+  | "QUARTER_FINAL"
+  | "SEMI_FINAL"
+  | "THIRD_PLACE"
+  | "FINAL";
+
+export type MatchStatusType =
+  | "SCHEDULED"
+  | "LIVE"
+  | "HALF_TIME"
+  | "FINISHED"
+  | "POSTPONED"
+  | "CANCELLED";
+
+export interface TeamStanding {
+  id: string;
+  name: string;
+  flagUrl: string | null;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDiff: number;
+  points: number;
+  groupId: string;
+  position?: number; // 1-4 within the group
+}
+
+export interface MatchWithTeams {
+  id: string;
+  matchNumber: number;
+  stage: StageType;
+  groupId: string | null;
+  kickoffUtc: string; // ISO string
+  homeTeam: { id: string; name: string; flagUrl: string | null } | null;
+  awayTeam: { id: string; name: string; flagUrl: string | null } | null;
+  homePlaceholder: string | null;
+  awayPlaceholder: string | null;
+  venue: { name: string; city: string; country: string };
+  status: MatchStatusType;
+  homeScore: number | null;
+  awayScore: number | null;
+}
+
+export interface PathwayRound {
+  round: StageType;
+  label: string; // "Round of 32", "Round of 16", etc.
+  possibleOpponents: string[]; // Team names or placeholder descriptions
+  bracketSlot: string; // e.g. "R32-Match-17"
+}
+
+export interface TeamPathway {
+  team: { id: string; name: string; groupId: string; flagUrl: string | null };
+  currentGroupPosition: number | "TBD";
+  rounds: PathwayRound[];
+}
+
+export interface GroupWithStandings {
+  id: string;
+  name: string;
+  teams: TeamStanding[];
+}
+
+export interface LiveScore {
+  matchId: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: MatchStatusType;
+  minute?: number;
+}

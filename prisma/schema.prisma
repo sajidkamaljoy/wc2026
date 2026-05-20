@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Group {
+  id     String   @id   // "A", "B", ... "L"
+  name   String         // "Group A"
+  teams  Team[]
+}
+
+model Team {
+  id            String   @id          // "MEX", "USA", "ARG", etc. (FIFA 3-letter code)
+  name          String                 // "Mexico"
+  shortName     String                 // "Mexico"
+  flagUrl       String?                // URL from football-data.org or local /public/flags/
+  crestUrl      String?
+  groupId       String
+  group         Group    @relation(fields: [groupId], references: [id])
+  confederation String              // "CONCACAF", "UEFA", "CONMEBOL", "CAF", "AFC", "OFC"
+
+  // Standings (updated as matches are played)
+  played       Int      @default(0)
+  won          Int      @default(0)
+  drawn        Int      @default(0)
+  lost         Int      @default(0)
+  goalsFor     Int      @default(0)
+  goalsAgainst Int      @default(0)
+  points       Int      @default(0)
+
+  homeMatches Match[]  @relation("HomeTeam")
+  awayMatches Match[]  @relation("AwayTeam")
+}
+
+model Venue {
+  id       String   @id     // "metlife", "estadio_azteca", etc.
+  name     String           // "New York New Jersey Stadium"
+  city     String
+  country  String           // "USA", "Mexico", "Canada"
+  capacity Int?
+  matches  Match[]
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  matchNumber     Int         @unique  // 1–104
+  stage           Stage
+  groupId         String?              // null for knockout matches
+  
+  // Kickoff time stored in UTC always
+  kickoffUtc      DateTime
+  
+  homeTeamId      String?
+  homeTeam        Team?       @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId      String?
+  awayTeam        Team?       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  
+  // For knockout placeholders (e.g. "Winner Group A vs Runner-up Group B")
+  homePlaceholder String?
+  awayPlaceholder String?
+  
+  venueId         String
+  venue           Venue       @relation(fields: [venueId], references: [id])
+  
+  status          MatchStatus @default(SCHEDULED)
+  
+  homeScore       Int?
+  awayScore       Int?
+  homeScoreET     Int?        // After extra time
+  awayScoreET     Int?
+  homeScorePens   Int?        // After penalties
+  awayScorePens   Int?
+  
+  // External API match ID for live score polling
+  externalId      String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+enum Stage {
+  GROUP
+  ROUND_OF_32
+  ROUND_OF_16
+  QUARTER_FINAL
+  SEMI_FINAL
+  THIRD_PLACE
+  FINAL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  HALF_TIME
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
