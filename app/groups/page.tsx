@@ -1,12 +1,54 @@
-import { GroupGrid } from "@/components/groups/GroupGrid";
+import { GroupGridServer } from "@/components/groups/GroupGridServer";
 import type { Metadata } from "next";
+import { prisma } from "@/lib/db";
+import { unstable_cache } from "next/cache";
+import type { GroupWithStandings } from "@/types";
 
 export const metadata: Metadata = {
   title: "Group Standings — FIFA World Cup 2026™",
-  description: "Track live group standings for all 48 national teams across Groups A to L. Visual indicators for qualification and best third-place slots.",
+  description:
+    "Track live group standings for all 48 national teams across Groups A to L. Visual indicators for qualification and best third-place slots.",
 };
 
-export default function GroupsPage() {
+// Server-side cache: revalidates every 60 seconds
+const fetchGroups = unstable_cache(
+  async (): Promise<GroupWithStandings[]> => {
+    const groups = await prisma.group.findMany({
+      include: {
+        teams: {
+          orderBy: [{ points: "desc" }, { goalsFor: "desc" }],
+        },
+      },
+      orderBy: { id: "asc" },
+    });
+
+    return groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      teams: g.teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        flagUrl: t.flagUrl,
+        played: t.played,
+        won: t.won,
+        drawn: t.drawn,
+        lost: t.lost,
+        goalsFor: t.goalsFor,
+        goalsAgainst: t.goalsAgainst,
+        goalDiff: t.goalsFor - t.goalsAgainst,
+        points: t.points,
+        groupId: t.groupId,
+      })),
+    }));
+  },
+  ["groups-page"],
+  { revalidate: 60, tags: ["groups"] }
+);
+
+// Async Server Component — fetches data on the server, zero client-side spinner
+export default async function GroupsPage() {
+  const groups = await fetchGroups();
+
   return (
     <div className="w-full">
       {/* Page Header */}
@@ -19,8 +61,8 @@ export default function GroupsPage() {
         </p>
       </div>
 
-      {/* Standings Grid */}
-      <GroupGrid />
+      {/* Standings Grid — receives pre-fetched data, renders immediately */}
+      <GroupGridServer groups={groups} />
     </div>
   );
 }

@@ -49,16 +49,22 @@ function mapStatus(fdStatus: string): LiveScore["status"] {
   return map[fdStatus] ?? "SCHEDULED";
 }
 
-// Cache the external→internal ID map in memory (refreshed on startup)
+// Cache the external→internal ID map in memory with a 10-minute TTL.
+// Without a TTL, stale IDs would persist if matches are updated in the DB.
+const ID_MAP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 let idMap: Map<string, string> | null = null;
+let idMapFetchedAt = 0;
 
 async function getIdMap(): Promise<Map<string, string>> {
-  if (idMap) return idMap;
+  const now = Date.now();
+  if (idMap && now - idMapFetchedAt < ID_MAP_TTL_MS) return idMap;
+
   const matches = await prisma.match.findMany({
     select: { id: true, externalId: true },
     where: { externalId: { not: null } },
   });
   idMap = new Map(matches.map((m) => [m.externalId!, m.id]));
+  idMapFetchedAt = now;
   return idMap;
 }
 

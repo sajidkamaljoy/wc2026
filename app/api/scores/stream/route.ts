@@ -3,25 +3,36 @@ import { getLiveScoresMapped } from "@/lib/football-api";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Module-level shared state for the local Node process (avoids rate limits across concurrent browser tabs)
+// Module-level shared broadcaster for the local Node process.
+// Using setInterval (stored by reference) instead of a boolean flag,
+// so the poller can be safely cleared and restarted on hot-reload.
 let latestScores: string = "[]";
 const listeners: Set<(data: string) => void> = new Set();
 
-let started = false;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
 function ensurePoller() {
-  if (started) return;
-  started = true;
+  // Already running — skip
+  if (pollInterval) return;
+
   const poll = async () => {
     try {
       const scores = await getLiveScoresMapped();
-      latestScores = JSON.stringify(scores);
-      listeners.forEach((fn) => fn(latestScores));
+      const serialised = JSON.stringify(scores);
+      // Only broadcast if scores actually changed (avoids unnecessary SSE frames)
+      if (serialised !== latestScores) {
+        latestScores = serialised;
+        listeners.forEach((fn) => fn(latestScores));
+      }
     } catch (error) {
       console.error("Poller error:", error);
+      // Do NOT stop the interval on transient errors — it will retry next tick
     }
   };
+
+  // Immediate first poll, then every 30 s
   poll();
-  setInterval(poll, 30_000);
+  pollInterval = setInterval(poll, 30_000);
 }
 
 export async function GET() {
@@ -33,25 +44,28 @@ export async function GET() {
       const send = (data: string) => {
         try {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ scores: JSON.parse(data), ts: Date.now() })}\n\n`)
+            encoder.encode(
+              `data: ${JSON.stringify({ scores: JSON.parse(data), ts: Date.now() })}\n\n`
+            )
           );
         } catch {
-          // ignore stream close errors
+          // Ignore — client already disconnected
         }
       };
 
-      // Send current cached state immediately upon connection
+      // Immediately send current cached state to the new subscriber
       send(latestScores);
 
-      // Register listener for real-time broadcast updates
+      // Register this client as a live listener
       listeners.add(send);
 
+      // Cleanup when the client disconnects
       return () => {
         listeners.delete(send);
       };
     },
     cancel() {
-      // Stream canceled by client disconnection
+      // Stream cancelled by client — nothing extra needed, cleanup runs above
     },
   });
 
@@ -60,6 +74,8 @@ export async function GET() {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      // Heartbeat hint so proxies don't close the connection after 60s
+      "X-Accel-Buffering": "no",
     },
   });
 }
