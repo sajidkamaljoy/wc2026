@@ -76,11 +76,11 @@ export function TeamRow({ team, position }: Props) {
             ) : (
               <div className="h-4.5 w-7 bg-slate-800 rounded border border-white/5" />
             )}
-            <span className="font-semibold text-slate-200 group-hover:text-white transition-colors text-sm">
+            <span className="font-semibold text-slate-200 group-hover:text-white transition-colors text-sm truncate">
               {team.name}
             </span>
             {/* Custom Indicator Dot */}
-            <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
           </Link>
         </div>
       </td>

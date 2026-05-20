@@ -51,11 +51,11 @@ export function GroupTable({ group }: Props) {
       {/* Legend Footer Hint */}
       <div className="border-t border-white/[0.02] bg-slate-950/10 px-4 py-2 flex items-center gap-4 text-[10px] text-slate-500 font-medium">
         <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-500/80" />
           <span>Qualify</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
+          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-500/80" />
           <span>Best 3rd Place</span>
         </div>
       </div>
