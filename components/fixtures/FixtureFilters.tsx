@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ShieldAlert, Layers } from "lucide-react";
+import { CalendarDays, Layers, Star } from "lucide-react";
 
 interface Props {
   stage: string;
@@ -8,6 +8,8 @@ interface Props {
   team: string;
   onTeamChange: (v: string) => void;
   teams: { id: string; name: string }[];
+  favoritesOnly: boolean;
+  onFavoritesOnlyChange: (v: boolean) => void;
 }
 
 const STAGES = [
@@ -27,12 +29,13 @@ export function FixtureFilters({
   team,
   onTeamChange,
   teams,
+  favoritesOnly,
+  onFavoritesOnlyChange,
 }: Props) {
   return (
     <div className="flex flex-col md:flex-row flex-wrap gap-4 items-center justify-between mb-8 p-4 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-sm">
       {/* Left side: Filters */}
       <div className="flex flex-col sm:flex-row flex-wrap gap-4 w-full md:w-auto items-center">
-
         {/* Filter By Stage */}
         <div className="flex flex-col w-full sm:w-auto gap-2">
           <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -83,6 +86,24 @@ export function FixtureFilters({
               </svg>
             </div>
           </div>
+        </div>
+
+        {/* Starred Teams Only Toggle */}
+        <div className="flex flex-col w-full sm:w-auto gap-2">
+          <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <Star className="h-3 w-3 text-amber-400" /> Starred Teams
+          </label>
+          <button
+            onClick={() => onFavoritesOnlyChange(!favoritesOnly)}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all duration-300 ${
+              favoritesOnly
+                ? "bg-amber-400 border-amber-400 text-slate-950 shadow-[0_2px_10px_rgba(251,191,36,0.3)] font-bold scale-[1.02]"
+                : "bg-slate-950/80 border-white/10 text-slate-400 hover:text-white hover:border-white/20"
+            }`}
+          >
+            <Star className={`h-3.5 w-3.5 ${favoritesOnly ? "fill-slate-950" : ""}`} />
+            My Teams Only
+          </button>
         </div>
       </div>
     </div>

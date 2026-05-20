@@ -1,14 +1,29 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLiveScores } from "@/components/live/useLiveScores";
-import { Trophy, Calendar, LayoutGrid, Radio } from "lucide-react";
+import { Trophy, Calendar, LayoutGrid, Radio, Search } from "lucide-react";
+import { SearchModal } from "@/components/search/SearchModal";
 
 export function NavBar() {
   const pathname = usePathname();
   const { scores } = useLiveScores();
   const hasLive = scores.some((s) => s.status === "LIVE" || s.status === "HALF_TIME");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const links = [
     { href: "/fixtures", label: "Fixtures", icon: Calendar },
@@ -58,27 +73,47 @@ export function NavBar() {
           </nav>
         </div>
 
-        {/* Live Indicator */}
-        <div className="flex items-center">
-          {hasLive ? (
-            <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-xs font-bold text-red-400 uppercase tracking-widest shadow-[0_0_12px_rgba(239,68,68,0.2)] animate-pulse">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        {/* Search & Live Indicator */}
+        <div className="flex items-center gap-3">
+          {/* Spotlight Search Toggle */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-slate-900/60 text-slate-400 hover:text-white hover:border-white/10 hover:bg-slate-900 transition-all cursor-pointer text-xs font-medium"
+            title="Search matches (Ctrl+K)"
+          >
+            <Search className="h-3.5 w-3.5 shrink-0 text-slate-500 group-hover:text-slate-300" />
+            <span className="hidden md:inline">Search</span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-white/10 bg-slate-950/80 text-[9px] text-slate-500 font-mono select-none">
+              <span className="text-[7px]">Ctrl</span>
+              <span>K</span>
+            </kbd>
+          </button>
+
+          {/* Live Indicator */}
+          <div>
+            {hasLive ? (
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-xs font-bold text-red-400 uppercase tracking-widest shadow-[0_0_12px_rgba(239,68,68,0.2)] animate-pulse">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                <span className="hidden sm:inline flex items-center gap-1">
+                  <Radio className="h-3.5 w-3.5" /> Live matches on
+                </span>
+                <span className="sm:hidden">Live</span>
               </span>
-              <span className="hidden sm:inline flex items-center gap-1">
-                <Radio className="h-3.5 w-3.5" /> Live matches on
+            ) : (
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-widest">
+                <span className="h-2 w-2 rounded-full bg-slate-600" />
+                <span>Live Feed: Idle</span>
               </span>
-              <span className="sm:hidden">Live</span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-widest">
-              <span className="h-2 w-2 rounded-full bg-slate-600" />
-              <span>Live Feed: Idle</span>
-            </span>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Global Spotlight Search Modal */}
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }

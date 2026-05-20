@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { TeamStanding } from "@/types";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface Props {
   team: TeamStanding;
@@ -10,6 +11,31 @@ interface Props {
 }
 
 export function TeamRow({ team, position }: Props) {
+  const { isFavorite, toggleFavorite, isLoaded } = useFavorites();
+  const isFav = isFavorite(team.id);
+
+  const handleStarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(team.id);
+  };
+
+  const starButton = isLoaded && (
+    <button
+      onClick={handleStarClick}
+      className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+      title={isFav ? "Remove from Favorites" : "Add to Favorites"}
+    >
+      <Star
+        className={`h-3.5 w-3.5 transition-all ${
+          isFav
+            ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]"
+            : "text-slate-600 hover:text-slate-400"
+        }`}
+      />
+    </button>
+  );
+
   // Highlights for qualification zones
   // Top 2: Qualify (Green)
   // 3rd: Possible qualification (Yellow)
@@ -34,11 +60,12 @@ export function TeamRow({ team, position }: Props) {
     >
       {/* Position and Team */}
       <td className="px-4 py-3">
-        <Link href={`/teams/${team.id}`} className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-5 font-mono text-xs text-slate-500 group-hover:text-slate-300 font-semibold">
             {position}
           </div>
-          <div className="flex items-center gap-2">
+          {starButton}
+          <Link href={`/teams/${team.id}`} className="flex items-center gap-2.5 flex-1">
             {team.flagUrl ? (
               <img
                 src={team.flagUrl}
@@ -52,10 +79,10 @@ export function TeamRow({ team, position }: Props) {
             <span className="font-semibold text-slate-200 group-hover:text-white transition-colors text-sm">
               {team.name}
             </span>
-          </div>
-          {/* Custom Indicator Dot */}
-          <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-        </Link>
+            {/* Custom Indicator Dot */}
+            <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+          </Link>
+        </div>
       </td>
 
       {/* Stats Columns */}
