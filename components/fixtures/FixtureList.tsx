@@ -10,7 +10,6 @@ import { Loader2, Calendar } from "lucide-react";
 
 export function FixtureList() {
   const [matches, setMatches] = useState<MatchWithTeams[]>([]);
-  const [sort, setSort] = useState<"date" | "team">("date");
   const [stageFilter, setStageFilter] = useState<string>("");
   const [teamFilter, setTeamFilter] = useState<string>("");
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
@@ -32,7 +31,7 @@ export function FixtureList() {
     let active = true;
     setLoading(true);
 
-    const params = new URLSearchParams({ sort });
+    const params = new URLSearchParams({ sort: "date" });
     if (stageFilter) {
       params.set("stage", stageFilter);
     }
@@ -60,10 +59,10 @@ export function FixtureList() {
     return () => {
       active = false;
     };
-  }, [sort, stageFilter, teamFilter]);
+  }, [stageFilter, teamFilter]);
 
-  // Group by date for "date" sort
-  const grouped = groupByDate(matches, sort);
+  // Group by date
+  const grouped = groupByDate(matches);
 
   return (
     <div className="w-full">
@@ -72,8 +71,6 @@ export function FixtureList() {
 
       {/* Filter Toolbar */}
       <FixtureFilters
-        sort={sort}
-        onSortChange={setSort}
         stage={stageFilter}
         onStageChange={setStageFilter}
         team={teamFilter}
@@ -92,7 +89,7 @@ export function FixtureList() {
           <Calendar className="h-10 w-10 text-slate-600" />
           <span className="text-sm font-semibold">No matches found matching the criteria.</span>
         </div>
-      ) : sort === "date" ? (
+      ) : (
         <div className="space-y-8">
           {Object.entries(grouped).map(([dateLabel, dayMatches]) => (
             <div key={dateLabel} className="space-y-3">
@@ -110,22 +107,12 @@ export function FixtureList() {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="grid gap-3">
-          {matches.map((m) => (
-            <FixtureCard key={m.id} match={m} />
-          ))}
-        </div>
       )}
     </div>
   );
 }
 
-function groupByDate(
-  matches: MatchWithTeams[],
-  sort: string
-): Record<string, MatchWithTeams[]> {
-  if (sort !== "date") return {};
+function groupByDate(matches: MatchWithTeams[]): Record<string, MatchWithTeams[]> {
   return matches.reduce<Record<string, MatchWithTeams[]>>((acc, m) => {
     try {
       const dateLabel = getLocalDateLabel(m.kickoffUtc);

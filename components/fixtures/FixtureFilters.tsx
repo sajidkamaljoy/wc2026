@@ -1,10 +1,8 @@
 "use client";
 
-import { CalendarDays, ShieldAlert, ArrowUpDown, Layers } from "lucide-react";
+import { CalendarDays, ShieldAlert, Layers } from "lucide-react";
 
 interface Props {
-  sort: "date" | "team";
-  onSortChange: (v: "date" | "team") => void;
   stage: string;
   onStageChange: (v: string) => void;
   team: string;
@@ -24,8 +22,6 @@ const STAGES = [
 ];
 
 export function FixtureFilters({
-  sort,
-  onSortChange,
   stage,
   onStageChange,
   team,
@@ -34,32 +30,8 @@ export function FixtureFilters({
 }: Props) {
   return (
     <div className="flex flex-col md:flex-row flex-wrap gap-4 items-center justify-between mb-8 p-4 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-sm">
-      {/* Left side: Sorting & Filters */}
+      {/* Left side: Filters */}
       <div className="flex flex-col sm:flex-row flex-wrap gap-4 w-full md:w-auto items-center">
-        {/* Sorting buttons */}
-        <div className="flex flex-col w-full sm:w-auto gap-2">
-          <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <ArrowUpDown className="h-3 w-3" /> Sort Matches By
-          </label>
-          <div className="flex rounded-xl overflow-hidden border border-white/10 p-0.5 bg-slate-950/60 max-w-fit">
-            {(["date", "team"] as const).map((v) => {
-              const isActive = sort === v;
-              return (
-                <button
-                  key={v}
-                  onClick={() => onSortChange(v)}
-                  className={`relative px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 capitalize cursor-pointer ${
-                    isActive
-                      ? "bg-amber-400 text-slate-950 shadow-[0_2px_8px_rgba(251,191,36,0.35)]"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {v === "date" ? "Kickoff Date" : "Team Name"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Filter By Stage */}
         <div className="flex flex-col w-full sm:w-auto gap-2">
