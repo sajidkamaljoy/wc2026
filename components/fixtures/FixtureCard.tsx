@@ -107,35 +107,22 @@ function TeamDisplay({
   const hasTeam = !!team;
   const isFav = team ? isFavorite(team.id) : false;
 
-  const handleStarClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (team) {
-      toggleFavorite(team.id);
-    }
-  };
-
-  const starButton = team && isLoaded && (
-    <button
-      onClick={handleStarClick}
-      className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-      title={isFav ? "Remove from Favorites" : "Add to Favorites"}
+  const starIndicator = team && isLoaded && isFav && (
+    <div
+      className="p-1 shrink-0"
+      title="Favorited Team"
     >
       <Star
-        className={`h-3.5 w-3.5 transition-all ${
-          isFav
-            ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]"
-            : "text-slate-600 hover:text-slate-400 hover:scale-105"
-        }`}
+        className="h-3.5 w-3.5 fill-amber-400 text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]"
       />
-    </button>
+    </div>
   );
 
   const content = (
     <div className={`flex items-center gap-2 flex-1 max-w-[150px] sm:max-w-[200px] ${
       align === "right" ? "justify-end text-right" : "justify-start text-left"
     }`}>
-      {align === "right" && starButton}
+      {align === "right" && starIndicator}
       {align === "right" && team?.flagUrl && (
         <img
           src={team.flagUrl}
@@ -157,7 +144,7 @@ function TeamDisplay({
           loading="lazy"
         />
       )}
-      {align === "left" && starButton}
+      {align === "left" && starIndicator}
     </div>
   );
 
