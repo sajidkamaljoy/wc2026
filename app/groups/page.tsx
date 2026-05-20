@@ -4,6 +4,10 @@ import { prisma } from "@/lib/db";
 import { unstable_cache } from "next/cache";
 import type { GroupWithStandings } from "@/types";
 
+// Force dynamic rendering — prevents build-time pre-rendering which requires
+// a live DB connection and would fail if the production DB isn't seeded yet.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Group Standings — FIFA World Cup 2026™",
   description:
