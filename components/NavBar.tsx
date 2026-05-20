@@ -105,7 +105,8 @@ export function NavBar() {
             ) : (
               <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-widest">
                 <span className="h-2 w-2 rounded-full bg-slate-600" />
-                <span>Live Feed: Idle</span>
+                <span className="hidden sm:inline">Live Feed: Idle</span>
+                <span className="sm:hidden">Idle</span>
               </span>
             )}
           </div>
