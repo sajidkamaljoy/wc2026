@@ -12,7 +12,21 @@ export function FixtureList() {
   const [matches, setMatches] = useState<MatchWithTeams[]>([]);
   const [sort, setSort] = useState<"date" | "team">("date");
   const [stageFilter, setStageFilter] = useState<string>("");
+  const [teamFilter, setTeamFilter] = useState<string>("");
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Load the list of teams once on mount
+  useEffect(() => {
+    fetch("/api/teams")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.teams) {
+          setTeams(data.teams);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch teams list:", err));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -21,6 +35,9 @@ export function FixtureList() {
     const params = new URLSearchParams({ sort });
     if (stageFilter) {
       params.set("stage", stageFilter);
+    }
+    if (teamFilter) {
+      params.set("team", teamFilter);
     }
 
     fetch(`/api/fixtures?${params}`)
@@ -43,7 +60,7 @@ export function FixtureList() {
     return () => {
       active = false;
     };
-  }, [sort, stageFilter]);
+  }, [sort, stageFilter, teamFilter]);
 
   // Group by date for "date" sort
   const grouped = groupByDate(matches, sort);
@@ -59,6 +76,9 @@ export function FixtureList() {
         onSortChange={setSort}
         stage={stageFilter}
         onStageChange={setStageFilter}
+        team={teamFilter}
+        onTeamChange={setTeamFilter}
+        teams={teams}
       />
 
       {/* Content Area */}
