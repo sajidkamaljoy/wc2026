@@ -1,4 +1,5 @@
-import { PrismaClient, Stage, MatchStatus } from "@prisma/client";
+import { PrismaClient, Stage, MatchStatus, Position, SquadStatus } from "@prisma/client";
+import { SQUADS } from "./squadsData";
 
 const prisma = new PrismaClient();
 
@@ -269,6 +270,95 @@ async function main() {
     await prisma.team.upsert({ where: { id: t.id }, update: {}, create: t });
   }
   console.log(`✅ ${TEAMS.length} teams`);
+
+  // Seeding Squads / Players
+  console.log("👥 Seeding team squads/players...");
+  let playersSeededCount = 0;
+  for (const t of TEAMS) {
+    const squad = SQUADS[t.id];
+    const playersToSeed: {
+      sortIndex: number;
+      name: string;
+      position: Position;
+      shirtNumber: number | null;
+      club: string | null;
+      age: number | null;
+      caps: number | null;
+      isPlaceholder: boolean;
+      squadStatus: SquadStatus;
+    }[] = [];
+
+    if (squad) {
+      squad.players.forEach((p, idx) => {
+        playersToSeed.push({
+          sortIndex: idx,
+          name: p.name,
+          position: p.position as Position,
+          shirtNumber: p.shirtNumber ?? null,
+          club: p.club ?? null,
+          age: p.age ?? null,
+          caps: p.caps ?? null,
+          isPlaceholder: false,
+          squadStatus: squad.status as SquadStatus,
+        });
+      });
+    } else {
+      // 26 placeholder players: 3 GK, 8 DEF, 8 MID, 7 FWD
+      for (let idx = 0; idx < 26; idx++) {
+        let position: Position = Position.GK;
+        if (idx >= 3 && idx < 11) position = Position.DEF;
+        else if (idx >= 11 && idx < 19) position = Position.MID;
+        else if (idx >= 19) position = Position.FWD;
+
+        playersToSeed.push({
+          sortIndex: idx,
+          name: "Player TBD",
+          position,
+          shirtNumber: null,
+          club: null,
+          age: null,
+          caps: null,
+          isPlaceholder: true,
+          squadStatus: SquadStatus.TBD,
+        });
+      }
+    }
+
+    for (const p of playersToSeed) {
+      await prisma.player.upsert({
+        where: {
+          teamId_sortIndex: {
+            teamId: t.id,
+            sortIndex: p.sortIndex,
+          },
+        },
+        update: {
+          name: p.name,
+          position: p.position,
+          shirtNumber: p.shirtNumber,
+          club: p.club,
+          age: p.age,
+          caps: p.caps,
+          isPlaceholder: p.isPlaceholder,
+          squadStatus: p.squadStatus,
+        },
+        create: {
+          teamId: t.id,
+          sortIndex: p.sortIndex,
+          name: p.name,
+          position: p.position,
+          shirtNumber: p.shirtNumber,
+          club: p.club,
+          age: p.age,
+          caps: p.caps,
+          isPlaceholder: p.isPlaceholder,
+          squadStatus: p.squadStatus,
+        },
+      });
+      playersSeededCount++;
+    }
+  }
+  console.log(`✅ ${playersSeededCount} players/placeholders seeded`);
 
   // Group stage fixtures
   for (const [n, gId, home, away, kickoff, venue] of GROUP_FIXTURES) {

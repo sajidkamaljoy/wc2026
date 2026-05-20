@@ -73,3 +73,25 @@ export interface LiveScore {
   status: MatchStatusType;
   minute?: number;
 }
+
+export type PositionType = "GK" | "DEF" | "MID" | "FWD";
+export type SquadStatusType = "CONFIRMED" | "PRELIMINARY" | "TBD";
+
+export interface Player {
+  id: string;
+  teamId: string;
+  name: string;
+  position: PositionType;
+  shirtNumber: number | null;
+  club: string | null;
+  age: number | null;
+  caps: number | null;
+  isPlaceholder: boolean;
+  squadStatus: SquadStatusType;
+}
+
+export interface SquadResponse {
+  teamId: string;
+  squadStatus: SquadStatusType;
+  players: Player[];
+}

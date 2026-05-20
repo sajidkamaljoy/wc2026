@@ -1,7 +1,9 @@
 import { PathwayBracket } from "@/components/pathway/PathwayBracket";
+import { SquadView } from "@/components/squad/SquadView";
 import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Users } from "lucide-react";
 
 interface Props {
   params: Promise<{ teamId: string }>;
@@ -23,8 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     return {
-      title: `${team.name} Knockout Pathway Seeding — FIFA World Cup 2026™`,
-      description: `Track potential knockout stage opponents, matches, venues, and seeding combinations for ${team.name} as they navigate Group and Knockout rounds.`,
+      title: `${team.name} Squad & Knockout Pathway — FIFA World Cup 2026™`,
+      description: `View official squad roster lists, positions, and track potential knockout stage opponents for ${team.name} in the FIFA World Cup 2026.`,
     };
   } catch {
     return {
@@ -48,8 +50,23 @@ export default async function TeamPage({ params }: Props) {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-16 pb-24 px-4 sm:px-0">
       <PathwayBracket teamId={upperTeamId} />
+      
+      {/* Squad Section Header */}
+      <div className="flex flex-col gap-2 border-t border-slate-900/60 pt-12">
+        <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          <span className="bg-amber-500/10 text-amber-400 p-2 rounded-xl border border-amber-500/20 shrink-0">
+            <Users className="h-5 w-5" />
+          </span>
+          Roster & Squad List
+        </h2>
+        <p className="text-xs md:text-sm text-slate-400 font-medium max-w-xl">
+          Detailed player profiles and position-by-position listings for the tournament roster.
+        </p>
+      </div>
+      
+      <SquadView teamId={upperTeamId} />
     </div>
   );
 }

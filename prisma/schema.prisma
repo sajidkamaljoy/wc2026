@@ -34,6 +34,7 @@ model Team {
 
   homeMatches Match[]  @relation("HomeTeam")
   awayMatches Match[]  @relation("AwayTeam")
+  players     Player[]
 }
 
 model Venue {
@@ -99,4 +100,34 @@ enum MatchStatus {
   FINISHED
   POSTPONED
   CANCELLED
+}
+
+model Player {
+  id            String      @id @default(cuid())
+  teamId        String
+  team          Team        @relation(fields: [teamId], references: [id])
+  name          String
+  position      Position
+  shirtNumber   Int?
+  club          String?
+  age           Int?
+  caps          Int?
+  isPlaceholder Boolean     @default(false)
+  squadStatus   SquadStatus @default(TBD)
+  sortIndex     Int         @default(0)
+
+  @@unique([teamId, sortIndex])
+}
+
+enum Position {
+  GK
+  DEF
+  MID
+  FWD
+}
+
+enum SquadStatus {
+  CONFIRMED
+  PRELIMINARY
+  TBD
 }
