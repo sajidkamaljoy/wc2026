@@ -1,10 +1,12 @@
 import { PathwayBracket } from "@/components/pathway/PathwayBracket";
 import { SquadView } from "@/components/squad/SquadView";
 import { TeamForm } from "@/components/team/TeamForm";
+import { FanMood } from "@/components/team/FanMood";
 import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Users } from "lucide-react";
+
 
 interface Props {
   params: Promise<{ teamId: string }>;
@@ -55,6 +57,8 @@ export default async function TeamPage({ params }: Props) {
       <PathwayBracket teamId={upperTeamId} />
       
       <TeamForm teamId={upperTeamId} />
+      
+      <FanMood teamId={upperTeamId} />
       
       {/* Squad Section Header */}
       <div className="flex flex-col gap-2 border-t border-slate-900/60 pt-12">
