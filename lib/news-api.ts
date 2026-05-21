@@ -103,7 +103,20 @@ export async function getTeamNews(teamName: string): Promise<NewsArticle[]> {
       return [];
     }
 
-    return data.articles.map((article: any) => ({
+    // De-duplicate articles by normalized title (lowercase, alphanumeric only)
+    const seenTitles = new Set<string>();
+    const uniqueArticles: any[] = [];
+
+    for (const article of data.articles) {
+      if (!article.title) continue;
+      const normalizedTitle = article.title.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+      if (!seenTitles.has(normalizedTitle)) {
+        seenTitles.add(normalizedTitle);
+        uniqueArticles.push(article);
+      }
+    }
+
+    return uniqueArticles.map((article: any) => ({
       title: article.title,
       url: article.url,
       image: article.image,
