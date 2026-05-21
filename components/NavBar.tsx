@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLiveScores } from "@/components/live/useLiveScores";
-import { Trophy, Calendar, LayoutGrid, Radio, Search } from "lucide-react";
+import { Trophy, Calendar, LayoutGrid, Radio, Search, Network } from "lucide-react";
 import { SearchModal } from "@/components/search/SearchModal";
 
 export function NavBar() {
@@ -28,6 +28,7 @@ export function NavBar() {
   const links = [
     { href: "/fixtures", label: "Fixtures", icon: Calendar },
     { href: "/groups", label: "Groups", icon: LayoutGrid },
+    { href: "/bracket", label: "Bracket", icon: Network },
   ];
 
   return (

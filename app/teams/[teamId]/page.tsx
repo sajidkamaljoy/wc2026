@@ -1,5 +1,6 @@
 import { PathwayBracket } from "@/components/pathway/PathwayBracket";
 import { SquadView } from "@/components/squad/SquadView";
+import { TeamForm } from "@/components/team/TeamForm";
 import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -50,8 +51,10 @@ export default async function TeamPage({ params }: Props) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-16 pb-24 px-4 sm:px-0">
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-10 pb-24 px-4 sm:px-0">
       <PathwayBracket teamId={upperTeamId} />
+      
+      <TeamForm teamId={upperTeamId} />
       
       {/* Squad Section Header */}
       <div className="flex flex-col gap-2 border-t border-slate-900/60 pt-12">

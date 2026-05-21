@@ -1,4 +1,5 @@
 import { FixtureList } from "@/components/fixtures/FixtureList";
+import { NewsFeed } from "@/components/news/NewsFeed";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,6 +19,8 @@ export default function FixturesPage() {
           Full 104-match calendar covering Group and Knockout phases.
         </p>
       </div>
+
+      <NewsFeed />
 
       {/* Fixtures list organizer */}
       <FixtureList />
