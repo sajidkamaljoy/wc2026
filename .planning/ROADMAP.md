@@ -6,7 +6,7 @@ A cohesive roadmap designed to implement a high-contrast, premium light theme to
 
 ## Phases
 
-- [ ] **Phase 1: Light Theme Toggle & Responsive Polishing** - Integrate a hydration-safe theme toggle, establish a beautiful slate-50/white & gold light palette, and polish responsiveness for all views.
+- [x] **Phase 1: Light Theme Toggle & Responsive Polishing** - Integrate a hydration-safe theme toggle, establish a beautiful slate-50/white & gold light palette, and polish responsiveness for all views.
 
 ## Phase Details
 
@@ -23,9 +23,9 @@ A cohesive roadmap designed to implement a high-contrast, premium light theme to
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Implement theme hook, provider, and Lucide toggle button in `NavBar.tsx` (next to Favorites).
-- [ ] 01-02: Map light/dark theme custom properties in `globals.css` and style individual page layouts (Groups, Teams, News) for high-contrast light mode.
-- [ ] 01-03: Responsive audit and UI polish across all pages (Bracket overflow, Squad grid, News Feed) on mobile viewports.
+- [x] 01-01: Implement theme hook, provider, and Lucide toggle button in `NavBar.tsx` (next to Favorites).
+- [x] 01-02: Map light/dark theme custom properties in `globals.css` and style individual page layouts (Groups, Teams, News) for high-contrast light mode.
+- [x] 01-03: Responsive audit and UI polish across all pages (Bracket overflow, Squad grid, News Feed) on mobile viewports.
 
 ## Progress
 
@@ -34,4 +34,4 @@ Phases execute in numeric order: 1
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Light Theme Toggle & Responsive Polishing | 0/3 | Not started | - |
+| 1. Light Theme Toggle & Responsive Polishing | 3/3 | Completed | 2026-05-22 |

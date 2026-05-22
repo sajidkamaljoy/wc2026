@@ -4,6 +4,7 @@ import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { PageWrapper } from "@/components/PageWrapper";
 import { LiveScoreProvider } from "@/components/live/LiveScoreProvider";
+import { ThemeProvider } from "@/hooks/useTheme";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,16 +25,36 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.className} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-amber-400 selection:text-slate-950">
-        <LiveScoreProvider>
-          {/* Navigation Bar */}
-          <NavBar />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('wc2026_theme');
+                  if (stored === 'light') {
+                    document.documentElement.classList.remove('dark');
+                  } else {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-amber-400 selection:text-slate-950 transition-colors duration-200">
+        <ThemeProvider>
+          <LiveScoreProvider>
+            {/* Navigation Bar */}
+            <NavBar />
 
-          {/* Global Page Wrapper */}
-          <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-            <PageWrapper>{children}</PageWrapper>
-          </main>
-        </LiveScoreProvider>
+            {/* Global Page Wrapper */}
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+              <PageWrapper>{children}</PageWrapper>
+            </main>
+          </LiveScoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

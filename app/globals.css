@@ -1,13 +1,82 @@
 @import "tailwindcss";
 
 :root {
-  --background: #020617; /* slate-950 */
-  --foreground: #f1f5f9; /* slate-100 */
+  /* Slate & Gold Light Theme */
+  --slate-50: #0f172a;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #475569;
+  --slate-500: #64748b;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #ffffff;
+  --slate-950: #f8fafc;
+
+  /* Custom overrides */
+  --white-dynamic: #020617;
+  --background: var(--slate-950);
+  --foreground: var(--slate-100);
+
+  /* Contrast-boosted gold and sky badges */
+  --amber-400: #d97706; /* amber-600 in light mode */
+  --amber-500: #b45309;
+  --sky-400: #0284c7;   /* sky-600 in light mode */
+  --sky-500: #0369a1;
+}
+
+.dark {
+  /* Dark Theme standard values */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Custom overrides */
+  --white-dynamic: #ffffff;
+  --background: var(--slate-950);
+  --foreground: var(--slate-100);
+
+  /* Standard gold and sky */
+  --amber-400: #fbbf24; /* amber-400 */
+  --amber-500: #f59e0b; /* amber-500 */
+  --sky-400: #38bdf8;   /* sky-400 */
+  --sky-500: #0ea5e9;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Intercept standard Tailwind color classes so we don't have to touch other components */
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+
+  /* Dynamic mapping for white color class references (like border-white/5) */
+  --color-white: var(--white-dynamic);
+
+  /* Dynamic mapping for amber and sky accents */
+  --color-amber-400: var(--amber-400);
+  --color-amber-500: var(--amber-500);
+  --color-sky-400: var(--sky-400);
+  --color-sky-500: var(--sky-500);
 }
 
 body {

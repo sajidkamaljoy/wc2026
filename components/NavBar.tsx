@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLiveScores } from "@/components/live/useLiveScores";
-import { Trophy, Calendar, LayoutGrid, Radio, Search, Network } from "lucide-react";
+import { Trophy, Calendar, LayoutGrid, Radio, Search, Network, Sun, Moon } from "lucide-react";
 import { SearchModal } from "@/components/search/SearchModal";
+import { useTheme } from "@/hooks/useTheme";
 
 export function NavBar() {
   const pathname = usePathname();
   const { scores } = useLiveScores();
   const hasLive = scores.some((s) => s.status === "LIVE" || s.status === "HALF_TIME");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { theme, toggleTheme, isLoaded } = useTheme();
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
@@ -77,10 +79,27 @@ export function NavBar() {
 
         {/* Search & Live Indicator — shrink-0 prevents them from being squeezed */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center h-8.5 w-8.5 rounded-lg border border-white/5 bg-slate-900/60 text-slate-400 hover:text-white hover:border-white/10 hover:bg-slate-900 transition-all cursor-pointer"
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isLoaded ? (
+              theme === "dark" ? (
+                <Sun className="h-4 w-4 shrink-0 transition-all duration-300 rotate-0 scale-100 hover:rotate-45" />
+              ) : (
+                <Moon className="h-4 w-4 shrink-0 transition-all duration-300 rotate-0 scale-100 hover:-rotate-12" />
+              )
+            ) : (
+              <div className="h-4 w-4 rounded-full bg-slate-800 animate-pulse" />
+            )}
+          </button>
+
           {/* Spotlight Search Toggle — icon-only on mobile */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg border border-white/5 bg-slate-900/60 text-slate-400 hover:text-white hover:border-white/10 hover:bg-slate-900 transition-all cursor-pointer text-xs font-medium"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/5 bg-slate-900/60 text-slate-400 hover:text-white hover:border-white/10 hover:bg-slate-900 transition-all cursor-pointer text-xs font-medium"
             title="Search matches (Ctrl+K)"
           >
             <Search className="h-3.5 w-3.5 shrink-0 text-slate-500" />
