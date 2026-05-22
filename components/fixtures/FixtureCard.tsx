@@ -8,12 +8,14 @@ import { Countdown } from "./Countdown";
 import { useFavorites } from "@/hooks/useFavorites";
 import { MapPin, Trophy, Star } from "lucide-react";
 import Link from "next/link";
+import { PredictionInput } from "./PredictionInput";
 
 interface Props {
   match: MatchWithTeams;
+  userPrediction?: { homeScore: number; awayScore: number };
 }
 
-export function FixtureCard({ match }: Props) {
+export function FixtureCard({ match, userPrediction }: Props) {
   const { getScore } = useLiveScores();
   const liveData = getScore(match.id);
 
@@ -29,7 +31,9 @@ export function FixtureCard({ match }: Props) {
       isLive 
         ? "border-red-500/30 bg-gradient-to-r from-red-500/5 via-slate-900/40 to-slate-900/40 shadow-[0_4px_20px_rgba(239,68,68,0.08)]" 
         : "border-white/5 bg-slate-900/40 hover:border-white/10 hover:bg-slate-900/60 shadow-sm"
-    } p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 w-full`}>
+    } flex flex-col w-full`}>
+      
+      <div className="p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 w-full">
       
       {/* Group or Knockout Stage Badge */}
       <div className="flex items-center gap-2 shrink-0 md:w-36 justify-center md:justify-start">
@@ -88,6 +92,17 @@ export function FixtureCard({ match }: Props) {
           {match.venue.city}, {match.venue.country}
         </span>
       </div>
+      </div>
+      
+      {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
+        <PredictionInput 
+          matchId={match.id}
+          homeTeamName={match.homeTeam.name}
+          awayTeamName={match.awayTeam.name}
+          initialHomeScore={userPrediction?.homeScore}
+          initialAwayScore={userPrediction?.awayScore}
+        />
+      )}
     </div>
   );
 }

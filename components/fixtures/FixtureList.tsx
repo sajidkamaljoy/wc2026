@@ -16,6 +16,7 @@ export function FixtureList() {
   const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userPredictions, setUserPredictions] = useState<Record<string, {homeScore: number, awayScore: number}>>({});
 
   const { favorites, isLoaded: favoritesLoaded } = useFavorites();
 
@@ -29,6 +30,20 @@ export function FixtureList() {
         }
       })
       .catch((err) => console.error("Failed to fetch teams list:", err));
+      
+    // Fetch user predictions
+    fetch("/api/predictions")
+      .then(res => res.json())
+      .then(data => {
+        if (data.predictions) {
+          const map: Record<string, any> = {};
+          data.predictions.forEach((p: any) => {
+             map[p.matchId] = p;
+          });
+          setUserPredictions(map);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch predictions:", err));
   }, []);
 
   useEffect(() => {
@@ -120,7 +135,7 @@ export function FixtureList() {
               </h2>
               <div className="grid gap-3">
                 {dayMatches.map((m) => (
-                  <FixtureCard key={m.id} match={m} />
+                  <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
                 ))}
               </div>
             </div>

@@ -1,12 +1,13 @@
-# Roadmap: World Cup 2026 Theme & Responsiveness
+# Roadmap: World Cup 2026 Theme, Responsiveness & Gamification
 
 ## Overview
 
-A cohesive roadmap designed to implement a high-contrast, premium light theme toggle alongside comprehensive mobile responsiveness testing and visual polishing across all views of the World Cup 2026 application.
+A cohesive roadmap designed to implement a high-contrast, premium light theme toggle, comprehensive mobile responsiveness testing, visual polishing, and an interactive match prediction Pick'em game with a global leaderboard.
 
 ## Phases
 
 - [x] **Phase 1: Light Theme Toggle & Responsive Polishing** - Integrate a hydration-safe theme toggle, establish a beautiful slate-50/white & gold light palette, and polish responsiveness for all views.
+- [x] **Phase 2: Match Predictions & Fan Pick'em Game** - Implement a login-free match outcome prediction system with an anonymous device-session cookie, scoring calculations, and a global leaderboard.
 
 ## Phase Details
 
@@ -27,11 +28,29 @@ Plans:
 - [x] 01-02: Map light/dark theme custom properties in `globals.css` and style individual page layouts (Groups, Teams, News) for high-contrast light mode.
 - [x] 01-03: Responsive audit and UI polish across all pages (Bracket overflow, Squad grid, News Feed) on mobile viewports.
 
+---
+
+### Phase 2: Match Predictions & Fan Pick'em Game
+**Goal**: Implement a frictionless, login-free match outcome prediction game and a real-time global leaderboard.
+**Mode**: mvp
+**Depends on**: Phase 1
+**Requirements**: [PRED-01, PRED-02, PRED-03, PRED-04, PRED-05]
+**Success Criteria** (what must be TRUE):
+  1. Fans can make predictions (+ and - buttons) on any upcoming (scheduled) match on the fixtures page.
+  2. Predictions are linked via a frictionless anonymous `deviceId` cookie/session.
+  3. A dedicated `/pickem` page displays the top 50 global leaderboard, user's nickname, and user's past predictions.
+  4. Scoring calculates correctly (+3 exact score, +1 correct outcome) when a match's score is updated.
+**Plans**: 1 plan
+
+Plans:
+- [x] 02-01: Build database schema, backend API routes, grading logic, and frontend interactive components for Pick'em game.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1
+Phases execute in numeric order: 1, 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Light Theme Toggle & Responsive Polishing | 3/3 | Completed | 2026-05-22 |
+| 2. Match Predictions & Fan Pick'em Game | 1/1 | Completed | 2026-05-22 |

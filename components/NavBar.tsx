@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLiveScores } from "@/components/live/useLiveScores";
-import { Trophy, Calendar, LayoutGrid, Radio, Search, Network, Sun, Moon } from "lucide-react";
+import { Trophy, Calendar, LayoutGrid, Radio, Search, Network, Sun, Moon, Target } from "lucide-react";
 import { SearchModal } from "@/components/search/SearchModal";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -31,6 +31,7 @@ export function NavBar() {
     { href: "/fixtures", label: "Fixtures", icon: Calendar },
     { href: "/groups", label: "Groups", icon: LayoutGrid },
     { href: "/bracket", label: "Bracket", icon: Network },
+    { href: "/pickem", label: "Pick'em", icon: Target },
   ];
 
   return (
