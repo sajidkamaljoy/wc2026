@@ -1,6 +1,6 @@
 # Architecture
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## Architectural Pattern
 
@@ -11,15 +11,17 @@
 | Page | Rendering | Data Fetching |
 |------|-----------|---------------|
 | `/` (Home) | Server → redirect to `/fixtures` | None |
-| `/fixtures` | Client-side via `FixtureList` | `fetch("/api/fixtures")` from browser |
+| `/fixtures` | Mixed: RSC shell + client `FixtureList`, RSC `NewsFeed` | `fetch("/api/fixtures")` from browser; `getWorldCupNews()` server-side |
 | `/groups` | **Async Server Component** | Direct Prisma query via `unstable_cache` |
-| `/teams/[teamId]` | Server component shell, client children | Server validates team, client fetches pathway + squad |
+| `/teams/[teamId]` | Server component shell, client children | Server validates team; client fetches pathway, form, sentiment, squad |
+| `/bracket` | **[NEW] Async Server Component** | Direct Prisma query for knockout matches |
 
 ### Key Architectural Decision: Server vs Client
 
 - **Groups page** uses direct Prisma access in the server component (zero client spinner)
-- **Fixtures page** delegates to a fully client-side `FixtureList` component that fetches from API routes (enables live score overlay and dynamic filtering without full page reloads)
-- **Team detail page** is a server component that validates team existence, then renders client components (`PathwayBracket`, `SquadView`) that fetch their own data
+- **Fixtures page** delegates to a fully client-side `FixtureList` component + a server-side `NewsFeed` RSC component
+- **Team detail page** is a server component that validates team existence, then renders client components (`PathwayBracket`, `TeamForm`, `FanMood`, `SquadView`) that each fetch their own data
+- **Bracket page** (new) is a pure server component that fetches all knockout matches directly from Prisma and passes to a client-side `FullBracketTree`
 
 ---
 
@@ -33,6 +35,7 @@
 │  │  NavBar, FixtureList, GroupGrid,          │  │
 │  │  PathwayBracket, SquadView, SearchModal   │  │
 │  │  LiveScoreProvider (SSE/polling)          │  │
+│  │  TeamForm, FanMood, FullBracketTree       │  │
 │  └─────────────┬─────────────────────────────┘  │
 │                │ fetch()                        │
 ├────────────────┼────────────────────────────────┤
@@ -43,13 +46,15 @@
 │  │  │ Server Pages    │ │ API Routes      │ │  │
 │  │  │ /groups (SSR)   │ │ /api/fixtures   │ │  │
 │  │  │ /teams/[id]     │ │ /api/groups     │ │  │
-│  │  │                 │ │ /api/scores     │ │  │
+│  │  │ /bracket (SSR)  │ │ /api/scores     │ │  │
 │  │  │                 │ │ /api/scores/    │ │  │
 │  │  │                 │ │   stream (SSE)  │ │  │
 │  │  │                 │ │ /api/teams      │ │  │
 │  │  │                 │ │ /api/teams/     │ │  │
 │  │  │                 │ │   [id]/pathway  │ │  │
 │  │  │                 │ │   [id]/squad    │ │  │
+│  │  │                 │ │   [id]/form     │ │  │
+│  │  │                 │ │   [id]/sentiment│ │  │
 │  │  └─────────────────┘ └────────┬────────┘ │  │
 │  └──────────────────────────────┬┘──────────┘  │
 │                                 │               │
@@ -58,6 +63,7 @@
 │  │  Service / Library Layer                  │  │
 │  │  lib/db.ts         (Prisma singleton)     │  │
 │  │  lib/football-api.ts (external API)       │  │
+│  │  lib/news-api.ts   (GNews API + mocks)    │  │
 │  │  lib/pathway.ts    (bracket calculation)  │  │
 │  │  lib/timezone.ts   (Intl formatting)      │  │
 │  │  lib/constants.ts  (bracket seeding map)  │  │
@@ -72,8 +78,10 @@
 │  └───────────────────────────────────────────┘  │
 │                                                 │
 │  ┌───────────────────────────────────────────┐  │
-│  │  External API                             │  │
+│  │  External APIs                            │  │
 │  │  football-data.org/v4 (live scores)       │  │
+│  │  gnews.io/api/v4 (news articles)          │  │
+│  │  github.com/martj42 (historical form CSV) │  │
 │  └───────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────┘
 ```
@@ -86,6 +94,7 @@
 
 ```
 Browser → GET /fixtures (Next.js page, renders shell)
+       → NewsFeed RSC fetches getWorldCupNews() server-side
        → FixtureList client component mounts
        → fetch("/api/teams") + fetch("/api/fixtures?sort=date")
        → API routes query Prisma (unstable_cache)
@@ -127,6 +136,39 @@ Browser → GET /groups
        → Zero client-side loading spinner
 ```
 
+### 5. [NEW] Team Recent Form
+
+```
+Browser → /teams/ARG → TeamForm mounts
+       → fetch("/api/teams/ARG/form")
+       → API: fetches martj42 CSV from GitHub (1h cache)
+       → Parses CSV backwards for last 5 finished matches
+       → Returns FormMatch[] with outcome, score, opponent, date
+       → TeamForm renders W/D/L badges
+```
+
+### 6. [NEW] Fan Mood Sentiment
+
+```
+Browser → /teams/ARG → FanMood mounts
+       → fetch("/api/teams/ARG/sentiment")
+       → API: looks up team full name from Prisma
+       → getTeamNews("Argentina") → gnews.io API (or mocks)
+       → npm `sentiment` library scores each headline
+       → averageScore mapped to label + emoji + color
+       → FanMood renders gauge (-5 to +5) with expandable headlines
+```
+
+### 7. [NEW] Knockout Bracket Page
+
+```
+Browser → GET /bracket
+       → Server component: prisma.match.findMany({ stage: knockout stages })
+       → FullBracketTree client component receives matches as props
+       → Renders stage-by-stage grid (R32 → Final)
+       → Match cards show team flags, names, and scores
+```
+
 ---
 
 ## Key Abstractions
@@ -152,6 +194,14 @@ Computes a team's full tournament pathway from group stage to Final by:
 2. Determining position in group
 3. Walking through BRACKET maps to project bracket slots
 
+### [NEW] news-api.ts
+
+Library module providing mock-first, gracefully degrading news functions:
+- `getWorldCupNews()` — used by `NewsFeed` RSC on Fixtures page
+- `getTeamNews(teamName)` — used by `/api/teams/[teamId]/sentiment` route
+
+Both functions return pre-written mock articles when `NEWS_API_KEY` env var is absent.
+
 ---
 
 ## Entry Points
@@ -160,13 +210,16 @@ Computes a team's full tournament pathway from group stage to Final by:
 |-------|------|------|
 | App root | `app/layout.tsx` | Root layout with providers, nav, page wrapper |
 | Home page | `app/page.tsx` | Redirect to `/fixtures` |
-| Fixtures | `app/fixtures/page.tsx` | Client-side fixture list |
+| Fixtures | `app/fixtures/page.tsx` | Server shell with `NewsFeed` RSC + client `FixtureList` |
 | Groups | `app/groups/page.tsx` | Server-rendered standings |
-| Team detail | `app/teams/[teamId]/page.tsx` | Pathway + squad view |
+| Team detail | `app/teams/[teamId]/page.tsx` | Pathway + Form + FanMood + Squad |
+| **Bracket** | `app/bracket/page.tsx` | **[NEW]** Server-rendered knockout bracket |
 | Fixtures API | `app/api/fixtures/route.ts` | REST endpoint |
 | Groups API | `app/api/groups/route.ts` | REST endpoint |
 | Scores API | `app/api/scores/route.ts` | REST endpoint |
 | SSE Stream | `app/api/scores/stream/route.ts` | SSE endpoint |
 | Teams API | `app/api/teams/route.ts` | REST endpoint |
 | Team detail API | `app/api/teams/[teamId]/route.ts` | REST endpoint |
+| **Form API** | `app/api/teams/[teamId]/form/route.ts` | **[NEW]** Recent match results from martj42 CSV |
+| **Sentiment API** | `app/api/teams/[teamId]/sentiment/route.ts` | **[NEW]** Fan mood score via news + NLP |
 | DB Seed | `prisma/seed.ts` | Database seeding script |

@@ -1,6 +1,6 @@
 # Project Structure
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## Directory Layout
 
@@ -35,7 +35,7 @@ wc2026/
 │   ├── favicon.ico               # App icon
 │   │
 │   ├── fixtures/                 # Fixtures page
-│   │   ├── page.tsx              # Server shell with <FixtureList /> client component
+│   │   ├── page.tsx              # Server shell with <NewsFeed /> RSC + <FixtureList /> client
 │   │   └── loading.tsx           # Streaming loading skeleton
 │   │
 │   ├── groups/                   # Group standings page
@@ -45,7 +45,10 @@ wc2026/
 │   ├── teams/                    # Team detail pages
 │   │   ├── loading.tsx           # Streaming loading skeleton
 │   │   └── [teamId]/
-│   │       └── page.tsx          # PathwayBracket + SquadView
+│   │       └── page.tsx          # PathwayBracket + TeamForm + FanMood + SquadView
+│   │
+│   ├── bracket/                  # [NEW] Knockout bracket page
+│   │   └── page.tsx              # Server component → FullBracketTree
 │   │
 │   └── api/                      # API route handlers
 │       ├── fixtures/
@@ -61,10 +64,12 @@ wc2026/
 │           └── [teamId]/
 │               ├── route.ts      # GET /api/teams/:id — team details
 │               ├── pathway/      # GET /api/teams/:id/pathway
-│               └── squad/        # GET /api/teams/:id/squad
+│               ├── squad/        # GET /api/teams/:id/squad
+│               ├── form/         # [NEW] GET /api/teams/:id/form — last 5 real matches
+│               └── sentiment/    # [NEW] GET /api/teams/:id/sentiment — fan mood score
 │
 ├── components/                   # React components (all client components)
-│   ├── NavBar.tsx                # Sticky nav with links, search, live indicator
+│   ├── NavBar.tsx                # Sticky nav with links, search, live indicator (+ Bracket link)
 │   ├── PageWrapper.tsx           # Fade-in page transition via pathname key
 │   ├── TimezoneBanner.tsx        # User timezone display banner
 │   │
@@ -92,13 +97,24 @@ wc2026/
 │   ├── search/                   # Search functionality
 │   │   └── SearchModal.tsx       # Spotlight-style search (Ctrl+K)
 │   │
-│   └── squad/                    # Team squad
-│       ├── SquadView.tsx         # Position-grouped squad roster
-│       └── PlayerCard.tsx        # Individual player card
+│   ├── squad/                    # Team squad
+│   │   ├── SquadView.tsx         # Position-grouped squad roster
+│   │   └── PlayerCard.tsx        # Individual player card
+│   │
+│   ├── bracket/                  # [NEW] Full knockout bracket
+│   │   └── FullBracketTree.tsx   # Stage-by-stage bracket grid (R32 → Final)
+│   │
+│   ├── news/                     # [NEW] News feed
+│   │   └── NewsFeed.tsx          # RSC (Server Component) — renders top 3 news articles
+│   │
+│   └── team/                     # [NEW] Team detail widgets
+│       ├── TeamForm.tsx           # Last 5 real match W/D/L form display
+│       └── FanMood.tsx            # Sentiment gauge with expandable headline list
 │
 ├── lib/                          # Shared libraries and utilities
 │   ├── db.ts                     # Prisma client singleton
 │   ├── football-api.ts           # football-data.org API client
+│   ├── news-api.ts               # [NEW] GNews API client with mock fallbacks
 │   ├── pathway.ts                # Bracket pathway calculation engine
 │   ├── timezone.ts               # Intl-based timezone formatting utilities
 │   └── constants.ts              # BRACKET seeding constant (R32→SF mappings)
@@ -112,7 +128,8 @@ wc2026/
 ├── scripts/                      # Utility scripts
 │   ├── test-api.ts               # Verify football-data.org API connectivity
 │   ├── verify-db.ts              # Verify database seed integrity + pathway calculation
-│   └── update-squad.ts           # Update squad data for teams
+│   ├── update-squad.ts           # Update squad data for teams
+│   └── count-players.ts          # [NEW] Report player/squad seeding statistics from DB
 │
 └── public/                       # Static assets
     ├── file.svg
@@ -129,25 +146,27 @@ wc2026/
 | Database schema | `prisma/schema.prisma` |
 | All type definitions | `types/index.ts` |
 | API routes | `app/api/` |
-| Page routes | `app/fixtures/`, `app/groups/`, `app/teams/[teamId]/` |
+| Page routes | `app/fixtures/`, `app/groups/`, `app/teams/[teamId]/`, `app/bracket/` |
 | Root layout + providers | `app/layout.tsx` |
 | Live score infrastructure | `components/live/` |
 | Bracket seeding logic | `lib/constants.ts` + `lib/pathway.ts` |
+| News & sentiment logic | `lib/news-api.ts` |
+| Team detail widgets | `components/team/` |
 | Utility scripts | `scripts/` |
 | Seed data | `prisma/seed.ts` + `prisma/squadsData.ts` |
 
 ## Naming Conventions
 
 | Element | Convention | Example |
-|---------|-----------|---------|
+|---------|-----------|---------| 
 | Component files | PascalCase | `FixtureCard.tsx`, `NavBar.tsx` |
 | Hook files | camelCase with `use` prefix | `useFavorites.ts`, `useLiveScores.ts` |
-| Library files | kebab-case | `football-api.ts`, `timezone.ts` |
+| Library files | kebab-case | `football-api.ts`, `news-api.ts`, `timezone.ts` |
 | API route files | `route.ts` in named directory | `app/api/fixtures/route.ts` |
 | Page files | `page.tsx` in named directory | `app/fixtures/page.tsx` |
 | Loading skeletons | `loading.tsx` co-located with page | `app/fixtures/loading.tsx` |
 | Type files | `index.ts` barrel export | `types/index.ts` |
-| Script files | kebab-case | `test-api.ts`, `verify-db.ts` |
+| Script files | kebab-case | `test-api.ts`, `count-players.ts` |
 | CSS variables | `--kebab-case` | `--background`, `--foreground` |
 | DB model fields | camelCase | `kickoffUtc`, `homeTeamId`, `goalsFor` |
 | DB model names | PascalCase | `Team`, `Match`, `Player` |
@@ -165,6 +184,9 @@ components/
 ├── pathway/      # Tournament bracket pathway
 ├── search/       # Search functionality
 ├── squad/        # Team squad display
+├── bracket/      # [NEW] Full knockout bracket viewer
+├── news/         # [NEW] News feed (RSC)
+├── team/         # [NEW] Team detail widgets (form, fan mood)
 ├── NavBar.tsx    # Shared navigation (top-level)
 ├── PageWrapper.tsx # Shared page wrapper (top-level)
 └── TimezoneBanner.tsx # Shared timezone banner (top-level)

@@ -1,6 +1,6 @@
 # Code Conventions
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## Component Patterns
 
@@ -18,13 +18,18 @@ All interactive components explicitly declare `"use client"` at the top of the f
 - `components/pathway/PathwayBracket.tsx`
 - `components/search/SearchModal.tsx`
 - `components/squad/SquadView.tsx`
+- `components/bracket/FullBracketTree.tsx` **[NEW]**
+- `components/team/TeamForm.tsx` **[NEW]**
+- `components/team/FanMood.tsx` **[NEW]**
 - `hooks/useFavorites.ts`
 
 **Server components** (no directive):
 - `app/groups/page.tsx` — async server component with direct Prisma query
 - `app/teams/[teamId]/page.tsx` — server component with Prisma validation
+- `app/bracket/page.tsx` — async server component with direct Prisma query **[NEW]**
 - `components/groups/GroupGridServer.tsx` — thin server-to-client bridge
 - `components/live/LiveScoreBadge.tsx` — pure presentational, no hooks
+- `components/news/NewsFeed.tsx` — RSC that calls `getWorldCupNews()` **[NEW]**
 
 ### Component Interface Pattern
 
@@ -73,6 +78,13 @@ Key conventions:
 - Errors logged to console, not surfaced to UI (except `SquadView` which sets an error state)
 - `finally` always resets loading state
 
+> **[NEW] Mounted guard pattern**: `FanMood.tsx` adds an additional `mounted` state (`useState(false)`) before fetching, to prevent hydration mismatches on SSR-rendered pages:
+> ```tsx
+> const [mounted, setMounted] = useState(false);
+> useEffect(() => { setMounted(true); }, []);
+> useEffect(() => { if (!mounted) return; fetch(...); }, [mounted]);
+> ```
+
 ### Loading States
 
 Components render consistent loading spinners using Lucide `Loader2`:
@@ -114,7 +126,7 @@ Empty states use a consistent dashed-border container with an icon:
 | API routes | RESTful path segments | `/api/teams/[teamId]/pathway` |
 | CSS classes | Tailwind utility-first | No custom class names except `animate-fade-in` |
 | Constants | UPPER_SNAKE_CASE | `BRACKET`, `ID_MAP_TTL_MS`, `STAGES` |
-| Env variables | UPPER_SNAKE_CASE | `DATABASE_URL`, `FOOTBALL_DATA_API_KEY` |
+| Env variables | UPPER_SNAKE_CASE | `DATABASE_URL`, `FOOTBALL_DATA_API_KEY`, `NEWS_API_KEY` |
 
 ---
 
@@ -142,6 +154,11 @@ export async function GET() {
 - Returns empty array `[]` on any API error
 - Returns mock `{ matches: [] }` if no API key configured
 - Catches errors silently in `getLiveScores()` to prevent app crashes
+
+`lib/news-api.ts` **[NEW]** uses mock-first defensive patterns:
+- Returns mock articles array if `NEWS_API_KEY` is absent (never null/crash)
+- Logs errors and returns a single fallback mock on any API error
+- De-duplicates by normalized title to avoid repeated headlines
 
 ### Client Components
 
@@ -196,8 +213,8 @@ import type { TeamPathway, PathwayRound } from "@/types";
 | Text primary | `text-slate-100` | Body text |
 | Text muted | `text-slate-400` / `text-slate-500` | Secondary text, labels |
 | Accent gold | `text-amber-400`, `bg-amber-500/10` | Active states, highlights, points |
-| Live/danger | `text-red-400`, `bg-red-500/10` | Live match indicators |
-| Success/qualify | `text-emerald-400`, `bg-emerald-500/10` | Qualification zone |
+| Live/danger | `text-red-400`, `bg-red-500/10` | Live match indicators, negative sentiment |
+| Success/qualify | `text-emerald-400`, `bg-emerald-500/10` | Qualification zone, positive sentiment |
 | Warning | `text-amber-300`, `bg-amber-500/5` | Third-place conditional |
 | Border subtle | `border-white/5`, `border-white/10` | Card borders, dividers |
 | Glassmorphism | `backdrop-blur-md`, `bg-slate-950/80` | NavBar, modals |
@@ -207,7 +224,7 @@ import type { TeamPathway, PathwayRound } from "@/types";
 Mobile-first with Tailwind breakpoints:
 - Mobile: icon-only nav items, collapsed badges, stacked layouts
 - `sm:` — show nav labels, expand badges
-- `md:` — side-by-side fixture card layout
+- `md:` — side-by-side fixture card layout, TeamForm horizontal scroll
 - `lg:` — wider content area
 - `xl:` — 3-column group grid
 
@@ -217,8 +234,8 @@ Mobile-first with Tailwind breakpoints:
 |-------|-------|-------|
 | `animate-fade-in` | Custom keyframe in `globals.css` | Page transitions via `PageWrapper` |
 | `animate-spin` | Tailwind built-in | Loading spinners |
-| `animate-pulse` | Tailwind built-in | Live indicator, preliminary squad badge |
-| `animate-ping` | Tailwind built-in | Live dot ripple effect |
+| `animate-pulse` | Tailwind built-in | Live indicator, preliminary squad badge, FanMood skeleton |
+| `animate-ping` | Tailwind built-in | Live dot ripple effect, sentiment indicator dot |
 
 ---
 
@@ -235,6 +252,7 @@ export const metadata: Metadata = {
 
 - Root layout sets base metadata with keywords and authors
 - Team detail page uses `generateMetadata()` for dynamic team-specific metadata
+- Bracket page **[NEW]** exports static metadata
 - `<h1>` used once per page with gradient text treatment
 
 ---
@@ -254,4 +272,4 @@ useEffect(() => {
 if (!clientData) return <ServerSafeFallback />;
 ```
 
-Used in: `KickoffTime`, `TimezoneBanner`, `Countdown`, `useFavorites`
+Used in: `KickoffTime`, `TimezoneBanner`, `Countdown`, `useFavorites`, `FanMood` **[NEW]**

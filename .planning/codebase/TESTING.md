@@ -1,6 +1,6 @@
 # Testing
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## Test Framework
 
@@ -52,6 +52,19 @@ The project relies on **manual verification scripts** in the `scripts/` director
 
 **Run:** `npx tsx scripts/update-squad.ts`
 
+### `scripts/count-players.ts` **[NEW]**
+
+**Purpose:** Report player and squad seeding statistics from the database.
+
+**Run:** `npx tsx scripts/count-players.ts`
+
+**What it checks:**
+1. Total player records
+2. Actual players vs. placeholder slots
+3. Squad status breakdown: PRELIMINARY, CONFIRMED, TBD
+
+**Output:** Formatted stats table with counts per category
+
 ## CI/CD
 
 - No CI/CD pipeline configuration files (`.github/workflows/`, `vercel.json`, etc.)
@@ -87,3 +100,7 @@ TypeScript strict mode (`"strict": true`) provides the primary safety net:
 | External API client | ⚠️ Manual only (`test-api.ts`) | Low — graceful degradation built in |
 | E2E user flows | ❌ None | High — no automated browser testing |
 | Timezone formatting | ❌ None | Medium — depends on Intl API behavior |
+| **News API / mocks** | ❌ None | **[NEW]** Low — mock fallback path, but GNews integration untested |
+| **Sentiment scoring** | ❌ None | **[NEW]** Low — `sentiment` library is well-tested, but score mapping thresholds untested |
+| **Team Form (CSV)** | ❌ None | **[NEW]** Medium — CSV parsing logic and edge cases (name mismatches, missing data) untested |
+| **Bracket page** | ❌ None | **[NEW]** Low — simple SSR data pass-through |

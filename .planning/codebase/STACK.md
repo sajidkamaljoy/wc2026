@@ -1,6 +1,6 @@
 # Technology Stack
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## Languages & Runtime
 
@@ -26,9 +26,10 @@
 | Package | Version | Purpose |
 |---------|---------|---------|
 | `@prisma/client` | ^6.19.3 | Auto-generated DB client for PostgreSQL |
-| `date-fns` | ^4.2.1 | Date utility library (imported but timezone handled via Intl) |
-| `date-fns-tz` | ^3.2.0 | Timezone-aware date formatting (imported but `lib/timezone.ts` uses raw Intl API) |
+| `date-fns` | ^4.2.1 | Date utility library — **now actively used** in `FanMood.tsx`, `TeamForm.tsx`, `NewsFeed.tsx`, `FullBracketTree.tsx` |
+| `date-fns-tz` | ^3.2.0 | Timezone-aware date formatting (declared but still unused — `lib/timezone.ts` uses raw Intl API) |
 | `lucide-react` | ^1.16.0 | Icon library (Trophy, Calendar, Star, etc.) |
+| `sentiment` | ^5.0.2 | **[NEW]** Natural language sentiment scoring for news headlines |
 | `zod` | ^4.4.3 | Schema validation (declared but not yet used in application code) |
 
 ### Development

@@ -1,6 +1,6 @@
 # External Integrations
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## Database — PostgreSQL (Neon)
 
@@ -46,7 +46,7 @@
 ### Endpoints Used
 
 | Function | Endpoint | Purpose |
-|----------|----------|---------|
+|----------|----------|---------| 
 | `getLiveScores()` | `GET /competitions/{id}/matches?status=IN_PLAY,PAUSED,FINISHED` | Fetch live/recent match scores |
 
 ### ID Mapping Strategy
@@ -62,6 +62,38 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 - If no API key is configured, `fdFetch()` returns `{ matches: [] }` — no crash
 - If API call fails, `getLiveScores()` catches errors and returns `[]`
 - All errors are logged to console
+
+---
+
+## [NEW] External API — GNews.io
+
+| Property | Value |
+|----------|-------|
+| Base URL | `https://gnews.io/api/v4/search` |
+| Auth | API key via `?apikey=` query param (env: `NEWS_API_KEY`) |
+| Client | `lib/news-api.ts` |
+| Revalidation | 1 hour (`next: { revalidate: 3600 }`) |
+| Fallback | Returns mock articles if `NEWS_API_KEY` is unset — app never crashes |
+
+### Functions
+
+| Function | Purpose |
+|----------|---------|
+| `getWorldCupNews()` | Fetches 3 top World Cup 2026 news articles for the Fixtures page |
+| `getTeamNews(teamName)` | Fetches up to 10 team-specific articles, de-duplicated by normalized title |
+
+---
+
+## [NEW] External Data Source — martj42/international_results CSV
+
+| Property | Value |
+|----------|-------|
+| Source | `https://raw.githubusercontent.com/martj42/international_results/master/results.csv` |
+| Client | `app/api/teams/[teamId]/form/route.ts` |
+| Revalidation | 1 hour (`next: { revalidate: 3600 }`) |
+| Purpose | Provides last 5 real match results for a team's "Recent Form" widget |
+| Parsing | CSV parsed inline — searches backwards from end of file for the 5 most recent finished matches |
+| Outcome | Calculated from home/away score columns — `W`, `D`, or `L` |
 
 ---
 
@@ -128,3 +160,6 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 | Teams List | `unstable_cache` | 1 hour |
 | Groups Page (SSR) | `unstable_cache` with tags `["groups"]` | 60s |
 | ID Map (in-memory) | Manual TTL check | 10 minutes |
+| News API (`getWorldCupNews`) | Next.js `fetch` revalidate | 1 hour |
+| Team News (`getTeamNews`) | Next.js `fetch` revalidate | 1 hour |
+| Team Form (CSV) | Next.js `fetch` revalidate | 1 hour |

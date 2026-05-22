@@ -1,6 +1,6 @@
 # Concerns & Technical Debt
 
-> Mapped: 2026-05-21
+> Mapped: 2026-05-21 | Updated: 2026-05-22
 
 ## 🔴 High Priority
 
@@ -34,6 +34,7 @@ No unit tests, integration tests, component tests, or E2E tests exist. The only 
 - `lib/football-api.ts` — external API mapping and ID translation
 - SSE stream behavior and fallback logic
 - Timezone formatting across locales
+- **[NEW]** `app/api/teams/[teamId]/form/route.ts` — CSV parsing brittle if team names differ slightly between the CSV and our DB
 
 **Recommendation:** Add at minimum:
 - Unit tests for `lib/pathway.ts` (pure logic, easy to test)
@@ -49,12 +50,13 @@ No unit tests, integration tests, component tests, or E2E tests exist. The only 
 
 **Files:** `package.json`
 
-- `date-fns` (^4.2.1) and `date-fns-tz` (^3.2.0) are declared as production dependencies but the codebase uses the native `Intl` API in `lib/timezone.ts` instead. No import of `date-fns` or `date-fns-tz` was found in any application file.
+- `date-fns-tz` (^3.2.0) is declared as a production dependency but the codebase uses the native `Intl` API in `lib/timezone.ts` instead. No import of `date-fns-tz` was found in any application file.
 - `zod` (^4.4.3) is declared but not imported anywhere in the codebase.
+- `date-fns` was previously flagged as unused but is **now actively used** in `FanMood.tsx`, `TeamForm.tsx`, `NewsFeed.tsx`, and `FullBracketTree.tsx`.
 
 **Impact:** Bundle bloat, misleading dependency list.
 
-**Recommendation:** Remove `date-fns`, `date-fns-tz`, and `zod` from `package.json` if not planned for imminent use.
+**Recommendation:** Remove `date-fns-tz` and `zod` from `package.json` if not planned for imminent use.
 
 ---
 
@@ -130,9 +132,23 @@ No React Error Boundaries are implemented. A runtime error in any client compone
 
 ---
 
+### 9. [NEW] Team Form — Brittle Name Matching
+
+**File:** `app/api/teams/[teamId]/form/route.ts`
+
+The form feature fetches the martj42 CSV and matches rows by comparing `homeTeam === teamName` against our database's `Team.name` field. If the CSV uses a different spelling (e.g., "United States" vs "USA" vs "United States of America"), no matches will be found and the form will silently return `[]`.
+
+**Impact:** Medium — some teams may have zero form entries even if they have recent match history.
+
+**Recommendation:**
+- Add a name alias mapping (`lib/teamNameAliases.ts`) between the CSV naming convention and our DB names
+- Consider adding a `verify-form.ts` script to audit name matches for all 48 teams
+
+---
+
 ## 🟢 Low Priority
 
-### 9. Search Modal Links to Home Team Only
+### 10. Search Modal Links to Home Team Only
 
 **File:** `components/search/SearchModal.tsx`
 
@@ -148,7 +164,7 @@ href={m.homeTeam?.id ? `/teams/${m.homeTeam.id}` : `/fixtures`}
 
 ---
 
-### 10. No Rate Limiting on API Routes
+### 11. No Rate Limiting on API Routes
 
 **Files:** All `app/api/*/route.ts`
 
@@ -160,7 +176,7 @@ API routes have no rate limiting, authentication, or abuse protection. While acc
 
 ---
 
-### 11. Hardcoded Locale Strings
+### 12. Hardcoded Locale Strings
 
 **Files:** `lib/timezone.ts`, `components/search/SearchModal.tsx`
 
@@ -176,7 +192,7 @@ new Intl.DateTimeFormat("en-GB", { ... })
 
 ---
 
-### 12. Large Seed File
+### 13. Large Seed File
 
 **File:** `prisma/seed.ts` (407 lines) + `prisma/squadsData.ts` (13,471 bytes)
 
@@ -188,7 +204,7 @@ The seed file contains inline data for all 12 groups, 48 teams, 16 venues, 104 m
 
 ---
 
-### 13. No Favicon or Open Graph Images
+### 14. No Favicon or Open Graph Images
 
 **File:** `app/layout.tsx`
 
@@ -200,3 +216,32 @@ The root layout metadata doesn't include:
 **Impact:** Poor social media sharing appearance.
 
 **Recommendation:** Add OG image generation and social meta tags.
+
+---
+
+### 15. [NEW] FullBracketTree Uses `any` Typing
+
+**File:** `components/bracket/FullBracketTree.tsx`
+
+The `Props` interface and internal `MatchCard` component use `any` for the `matches` array and `match` object:
+
+```tsx
+interface Props {
+  matches: any[];
+}
+function MatchCard({ match }: { match: any }) { ... }
+```
+
+**Impact:** Loss of TypeScript type safety in the bracket component.
+
+**Recommendation:** Define a proper `BracketMatch` interface (similar to `MatchWithTeams` in `types/index.ts`) and apply it to both the array and card props.
+
+---
+
+### 16. [NEW] `NEWS_API_KEY` Not Documented in `.env.example`
+
+The new `NEWS_API_KEY` environment variable required by `lib/news-api.ts` is not documented anywhere (no `.env.example` exists in the project).
+
+**Impact:** New contributors or deployments won't know this key is available and will silently get mock data.
+
+**Recommendation:** Create a `.env.example` file listing all required env vars: `DATABASE_URL`, `FOOTBALL_DATA_API_KEY`, `FOOTBALL_DATA_BASE_URL`, `FOOTBALL_DATA_COMPETITION_ID`, `NEWS_API_KEY`.
