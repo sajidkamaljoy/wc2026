@@ -1,4 +1,4 @@
-import prisma from "./db";
+import { prisma } from "./db";
 
 /**
  * Grades all predictions for a given match and updates user points.

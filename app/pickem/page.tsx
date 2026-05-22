@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import prisma from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { Trophy, Target, User } from "lucide-react";
 import type { Metadata } from "next";
 
