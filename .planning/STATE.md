@@ -54,6 +54,12 @@ Progress: [██████████] 100%
 
 *Updated after each plan completion*
 
+## Quick Tasks Completed
+
+| Slug | Date | Description | Status |
+|------|------|-------------|--------|
+| `predict-modal` | 2026-05-22 | Modal predictions layout in scheduled fixtures | Complete ✓ |
+
 ## Accumulated Context
 
 ### Decisions

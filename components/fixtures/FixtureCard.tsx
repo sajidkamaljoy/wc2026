@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useLiveScores } from "@/components/live/useLiveScores";
 import type { MatchWithTeams } from "@/types";
 import { LiveScoreBadge } from "@/components/live/LiveScoreBadge";
@@ -8,7 +9,7 @@ import { Countdown } from "./Countdown";
 import { useFavorites } from "@/hooks/useFavorites";
 import { MapPin, Trophy, Star } from "lucide-react";
 import Link from "next/link";
-import { PredictionInput } from "./PredictionInput";
+import { PredictionModal } from "./PredictionModal";
 
 interface Props {
   match: MatchWithTeams;
@@ -17,6 +18,12 @@ interface Props {
 
 export function FixtureCard({ match, userPrediction }: Props) {
   const { getScore } = useLiveScores();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [localPrediction, setLocalPrediction] = useState(userPrediction);
+
+  useEffect(() => {
+    setLocalPrediction(userPrediction);
+  }, [userPrediction]);
   const liveData = getScore(match.id);
 
   const homeScore = liveData?.homeScore ?? match.homeScore;
@@ -95,13 +102,44 @@ export function FixtureCard({ match, userPrediction }: Props) {
       </div>
       
       {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
-        <PredictionInput 
-          matchId={match.id}
-          homeTeamName={match.homeTeam.name}
-          awayTeamName={match.awayTeam.name}
-          initialHomeScore={userPrediction?.homeScore}
-          initialAwayScore={userPrediction?.awayScore}
-        />
+        <>
+          <div className="w-full mt-3 pt-3 border-t border-slate-800/50 flex justify-center px-4 pb-1">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className={`w-full py-2 px-6 rounded-xl font-semibold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${
+                localPrediction
+                  ? "bg-sky-500/10 border border-sky-400/20 text-sky-400 hover:bg-sky-500/25 hover:border-sky-400/35 active:scale-[0.98]"
+                  : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold border border-amber-500/10 active:scale-[0.98]"
+              }`}
+            >
+              {localPrediction ? (
+                <>
+                  <span>Edit Prediction</span>
+                  <span className="bg-sky-400/20 text-sky-300 font-mono font-bold px-2 py-0.5 rounded-full text-[10px]">
+                    {localPrediction.homeScore} – {localPrediction.awayScore}
+                  </span>
+                </>
+              ) : (
+                <span>Make a Prediction</span>
+              )}
+            </button>
+          </div>
+
+          <PredictionModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            matchId={match.id}
+            homeTeamName={match.homeTeam.name}
+            awayTeamName={match.awayTeam.name}
+            homeFlagUrl={match.homeTeam.flagUrl}
+            awayFlagUrl={match.awayTeam.flagUrl}
+            initialHomeScore={localPrediction?.homeScore}
+            initialAwayScore={localPrediction?.awayScore}
+            onSave={(homeScore, awayScore) => {
+              setLocalPrediction({ homeScore, awayScore });
+            }}
+          />
+        </>
       )}
     </div>
   );

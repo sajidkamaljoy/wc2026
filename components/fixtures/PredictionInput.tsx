@@ -9,9 +9,10 @@ interface Props {
   awayTeamName: string;
   initialHomeScore?: number;
   initialAwayScore?: number;
+  onSave?: (homeScore: number, awayScore: number) => void;
 }
 
-export function PredictionInput({ matchId, homeTeamName, awayTeamName, initialHomeScore, initialAwayScore }: Props) {
+export function PredictionInput({ matchId, homeTeamName, awayTeamName, initialHomeScore, initialAwayScore, onSave }: Props) {
   const { deviceId } = useUserSession();
   const [homeScore, setHomeScore] = useState<number>(initialHomeScore ?? 0);
   const [awayScore, setAwayScore] = useState<number>(initialAwayScore ?? 0);
@@ -27,7 +28,12 @@ export function PredictionInput({ matchId, homeTeamName, awayTeamName, initialHo
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ matchId, homeScore, awayScore }),
       });
-      if (res.ok) setSaved(true);
+      if (res.ok) {
+        setSaved(true);
+        if (onSave) {
+          onSave(homeScore, awayScore);
+        }
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -39,7 +45,7 @@ export function PredictionInput({ matchId, homeTeamName, awayTeamName, initialHo
   if (!deviceId) return null;
 
   return (
-    <div className="w-full mt-4 pt-4 border-t border-slate-800/50 flex flex-col items-center gap-3 bg-slate-900/20 rounded-xl p-3 transition-colors hover:bg-slate-900/40">
+    <div className="w-full flex flex-col items-center gap-4 bg-slate-900/40 border border-white/5 rounded-2xl p-4 shadow-inner">
       <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
         <span>Fan Pick'em</span>
         {saved && <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Saved</span>}
