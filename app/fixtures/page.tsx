@@ -15,9 +15,6 @@ export default function FixturesPage() {
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white uppercase bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
           Tournament Fixtures
         </h1>
-        <p className="text-sm text-slate-400 mt-1 font-medium">
-          Full 104-match calendar covering Group and Knockout phases.
-        </p>
       </div>
 
       <NewsFeed />

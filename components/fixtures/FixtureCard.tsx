@@ -81,9 +81,8 @@ export function FixtureCard({ match }: Props) {
         />
       </div>
 
-      {/* Match Details (Venue + Match #) */}
+      {/* Match Details (Venue) */}
       <div className="flex flex-col items-center md:items-end justify-center gap-1 shrink-0 md:w-44 text-slate-500 text-[11px] font-medium">
-        <span className="font-mono text-slate-600 tracking-wider">MATCH #{match.matchNumber}</span>
         <span className="flex items-center gap-1 text-center md:text-right hover:text-slate-400 transition-colors">
           <MapPin className="h-3 w-3 text-slate-600 shrink-0" />
           {match.venue.city}, {match.venue.country}

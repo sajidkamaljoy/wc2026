@@ -60,8 +60,7 @@ function MatchCard({ match }: { match: any }) {
 
   return (
     <div className="flex flex-col rounded-xl border border-white/5 bg-slate-900/40 p-4 transition-all hover:bg-slate-900/80 hover:border-white/10">
-      <div className="text-[10px] uppercase font-bold text-slate-500 mb-3 flex justify-between items-center">
-        <span>Match {match.matchNumber}</span>
+      <div className="text-[10px] uppercase font-bold text-slate-500 mb-3 flex justify-end items-center">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
           {format(new Date(match.kickoffUtc), "MMM d, HH:mm")}
