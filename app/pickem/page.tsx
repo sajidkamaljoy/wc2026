@@ -11,7 +11,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PickemPage() {
-  const deviceId = cookies().get("deviceId")?.value;
+  const cookieStore = await cookies();
+  const deviceId = cookieStore.get("deviceId")?.value;
 
   let currentUser = null;
   if (deviceId) {

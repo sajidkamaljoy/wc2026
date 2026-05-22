@@ -3,15 +3,15 @@ status: testing
 phase: 02-match-predictions-pickem
 source: [".planning/phases/02-match-predictions-pickem/02-01-SUMMARY.md"]
 started: "2026-05-22T17:05:00Z"
-updated: "2026-05-22T17:05:00Z"
+updated: "2026-05-22T17:07:00Z"
 ---
 
 ## Current Test
 
-number: 1
-name: Cold Start Smoke Test
+number: 2
+name: Anonymous Device Cookie Session
 expected: |
-  Kill any running server/service. Clear ephemeral state (temp DBs, caches, lock files). Start the application from scratch. Server boots without errors, any seed/migration completes, and a primary query (health check, homepage load, or basic API call) returns live data.
+  Opening the site sets the `wc2026_device_id` cookie in the browser. In the database, a corresponding `User` record is created automatically with a random nickname (e.g., `Fan_XXXX`).
 awaiting: user response
 
 ## Tests
@@ -19,7 +19,7 @@ awaiting: user response
 ### 1. Cold Start Smoke Test
 expected: |
   Kill any running server/service. Clear ephemeral state (temp DBs, caches, lock files). Start the application from scratch. Server boots without errors, any seed/migration completes, and a primary query (health check, homepage load, or basic API call) returns live data.
-result: [pending]
+result: pass
 
 ### 2. Anonymous Device Cookie Session
 expected: |
@@ -44,11 +44,12 @@ result: [pending]
 ## Summary
 
 total: 5
-passed: 0
+passed: 1
 issues: 0
-pending: 5
+pending: 4
 skipped: 0
 
 ## Gaps
 
 [none yet]
+
