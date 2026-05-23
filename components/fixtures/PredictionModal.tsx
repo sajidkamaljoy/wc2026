@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Trophy } from "lucide-react";
 import { PredictionInput } from "./PredictionInput";
 
@@ -29,6 +30,13 @@ export function PredictionModal({
   initialAwayScore,
   onSave,
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   // ESC key handler to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -42,8 +50,8 @@ export function PredictionModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300">
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300 animate-in fade-in duration-300">
       {/* Backdrop click closer */}
       <div className="absolute inset-0" onClick={onClose} />
 
@@ -110,4 +118,11 @@ export function PredictionModal({
       </div>
     </div>
   );
+
+  if (mounted) {
+    return createPortal(modalContent, document.body);
+  }
+
+  return null;
 }
+
