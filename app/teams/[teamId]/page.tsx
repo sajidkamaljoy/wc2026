@@ -2,10 +2,12 @@ import { PathwayBracket } from "@/components/pathway/PathwayBracket";
 import { SquadView } from "@/components/squad/SquadView";
 import { TeamForm } from "@/components/team/TeamForm";
 import { FanMood } from "@/components/team/FanMood";
+import { TeamMatches } from "@/components/team/TeamMatches";
 import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Users } from "lucide-react";
+import type { MatchWithTeams } from "@/types";
 
 
 interface Props {
@@ -43,17 +45,52 @@ export default async function TeamPage({ params }: Props) {
   const upperTeamId = teamId.toUpperCase();
 
   // Validate team exists, else redirect to standings page
-  const teamExists = await prisma.team.findUnique({
+  const team = await prisma.team.findUnique({
     where: { id: upperTeamId },
-    select: { id: true },
+    select: { id: true, name: true },
   });
 
-  if (!teamExists) {
+  if (!team) {
     redirect("/groups");
   }
 
+  const dbMatches = await prisma.match.findMany({
+    where: {
+      OR: [
+        { homeTeamId: upperTeamId },
+        { awayTeamId: upperTeamId }
+      ]
+    },
+    include: {
+      homeTeam: { select: { id: true, name: true, flagUrl: true } },
+      awayTeam: { select: { id: true, name: true, flagUrl: true } },
+      venue: { select: { name: true, city: true, country: true } }
+    },
+    orderBy: {
+      kickoffUtc: "asc"
+    }
+  });
+
+  const matches: MatchWithTeams[] = dbMatches.map((m) => ({
+    id: m.id,
+    matchNumber: m.matchNumber,
+    stage: m.stage,
+    groupId: m.groupId,
+    kickoffUtc: m.kickoffUtc.toISOString(),
+    homeTeam: m.homeTeam,
+    awayTeam: m.awayTeam,
+    homePlaceholder: m.homePlaceholder,
+    awayPlaceholder: m.awayPlaceholder,
+    venue: m.venue,
+    status: m.status,
+    homeScore: m.homeScore,
+    awayScore: m.awayScore
+  }));
+
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-10 pb-24 px-4 sm:px-0">
+      <TeamMatches matches={matches} teamName={team.name} />
+
       <PathwayBracket teamId={upperTeamId} />
       
       <TeamForm teamId={upperTeamId} />
