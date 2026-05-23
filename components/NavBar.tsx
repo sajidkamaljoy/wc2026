@@ -77,14 +77,19 @@ export function NavBar() {
         {/* ── Left: Logo + Nav ── */}
         <div className="flex items-center gap-4 sm:gap-8">
 
-          {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:scale-[1.02] transition-transform"
+            className="flex items-center gap-2.5 font-bold hover:scale-[1.01] transition-transform shrink-0"
           >
-            <Trophy className="h-6 w-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-            <span className="font-extrabold uppercase">WC2026</span>
-            <span className="hidden sm:inline text-xs font-medium text-amber-500/80 uppercase tracking-widest border border-amber-500/30 px-1.5 py-0.5 rounded">
+            <img 
+              src="/fifa-2026-logo.svg" 
+              alt="FIFA World Cup 2026 Logo" 
+              className="h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(251,191,36,0.2)] rounded-md border border-white/5"
+            />
+            <span className="font-extrabold uppercase text-base sm:text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500">
+              WC2026
+            </span>
+            <span className="hidden sm:inline text-[10px] font-bold text-amber-400 uppercase tracking-widest border border-amber-500/20 px-1.5 py-0.5 rounded bg-slate-950/40 shadow-inner">
               Companion
             </span>
           </Link>
