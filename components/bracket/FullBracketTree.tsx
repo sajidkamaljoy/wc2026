@@ -59,7 +59,7 @@ function MatchCard({ match }: { match: any }) {
   const awayDisplay = match.awayTeam?.name || match.awayPlaceholder || "TBD";
 
   return (
-    <div className="flex flex-col rounded-xl border border-white/5 bg-slate-900/40 p-4 transition-all hover:bg-slate-900/80 hover:border-white/10">
+    <div className="flex flex-col rounded-xl border border-white/5 bg-slate-900/40 p-4 transition-all hover:bg-slate-900/80 hover:border-white/10 relative">
       <div className="text-[10px] uppercase font-bold text-slate-500 mb-3 flex justify-end items-center">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
@@ -68,30 +68,40 @@ function MatchCard({ match }: { match: any }) {
       </div>
       
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0 group relative cursor-help">
              {match.homeTeam?.flagUrl ? (
-                <img src={match.homeTeam.flagUrl} alt="" className="h-5 w-7 object-cover rounded-sm shadow-sm" />
+                <img src={match.homeTeam.flagUrl} alt="" className="h-5 w-7 object-cover rounded-sm shadow-sm shrink-0" />
              ) : (
-                <div className="h-5 w-7 bg-slate-800 rounded-sm border border-white/5" />
+                <div className="h-5 w-7 bg-slate-800 rounded-sm border border-white/5 shrink-0" />
              )}
-             <span className="text-sm font-semibold text-slate-200 truncate max-w-[120px]">{homeDisplay}</span>
+             <span className="text-sm font-semibold text-slate-200 truncate">{homeDisplay}</span>
+             
+             {/* Tooltip */}
+             <div className="absolute left-0 -top-8 hidden group-hover:block z-50 bg-slate-800 border border-slate-600 text-white text-xs px-2.5 py-1.5 rounded shadow-xl whitespace-nowrap pointer-events-none">
+               {homeDisplay}
+             </div>
           </div>
-          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5">
+          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5 shrink-0">
              {match.homeScore ?? "-"}
           </span>
         </div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0 group relative cursor-help">
              {match.awayTeam?.flagUrl ? (
-                <img src={match.awayTeam.flagUrl} alt="" className="h-5 w-7 object-cover rounded-sm shadow-sm" />
+                <img src={match.awayTeam.flagUrl} alt="" className="h-5 w-7 object-cover rounded-sm shadow-sm shrink-0" />
              ) : (
-                <div className="h-5 w-7 bg-slate-800 rounded-sm border border-white/5" />
+                <div className="h-5 w-7 bg-slate-800 rounded-sm border border-white/5 shrink-0" />
              )}
-             <span className="text-sm font-semibold text-slate-200 truncate max-w-[120px]">{awayDisplay}</span>
+             <span className="text-sm font-semibold text-slate-200 truncate">{awayDisplay}</span>
+             
+             {/* Tooltip */}
+             <div className="absolute left-0 -top-8 hidden group-hover:block z-50 bg-slate-800 border border-slate-600 text-white text-xs px-2.5 py-1.5 rounded shadow-xl whitespace-nowrap pointer-events-none">
+               {awayDisplay}
+             </div>
           </div>
-          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5">
+          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5 shrink-0">
              {match.awayScore ?? "-"}
           </span>
         </div>

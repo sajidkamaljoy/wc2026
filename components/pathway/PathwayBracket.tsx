@@ -217,10 +217,15 @@ export function PathwayBracket({ teamId }: Props) {
                     {round.possibleOpponents.map((opp, idx) => (
                       <li
                         key={idx}
-                        className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-slate-950/40 border border-white/5 rounded-xl px-3 py-2.5 hover:border-white/10 transition-colors"
+                        className="group relative cursor-help flex items-center gap-2 text-xs font-semibold text-slate-200 bg-slate-950/40 border border-white/5 rounded-xl px-3 py-2.5 hover:border-white/10 transition-colors min-w-0"
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
                         <span className="truncate">{opp}</span>
+                        
+                        {/* Tooltip */}
+                        <div className="absolute left-0 -top-8 hidden group-hover:block z-50 bg-slate-800 border border-slate-600 text-white text-xs px-2.5 py-1.5 rounded shadow-xl whitespace-nowrap pointer-events-none">
+                          {opp}
+                        </div>
                       </li>
                     ))}
                   </ul>
