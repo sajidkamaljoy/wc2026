@@ -29,10 +29,12 @@ wc2026/
 │       └── 20260520175741_add_players/
 │
 ├── app/                          # Next.js App Router
-│   ├── layout.tsx                # Root layout (Inter font, NavBar, LiveScoreProvider, PageWrapper)
+│   ├── layout.tsx                # Root layout (Inter font, NavBar, LiveScoreProvider, PageWrapper, Footer)
 │   ├── page.tsx                  # Home → redirect to /fixtures
 │   ├── globals.css               # Tailwind import, CSS vars, fade-in animation
 │   ├── favicon.ico               # App icon
+│   ├── sitemap.ts                # [NEW] Dynamic sitemap.xml generator (crawls teams + static)
+│   ├── robots.ts                 # [NEW] Dynamic robots.txt crawler boundaries
 │   │
 │   ├── fixtures/                 # Fixtures page
 │   │   ├── page.tsx              # Server shell with <NewsFeed /> RSC + <FixtureList /> client
@@ -72,6 +74,7 @@ wc2026/
 │   ├── NavBar.tsx                # Sticky nav with links, search, live indicator (+ Bracket link)
 │   ├── PageWrapper.tsx           # Fade-in page transition via pathname key
 │   ├── TimezoneBanner.tsx        # User timezone display banner
+│   ├── Footer.tsx                # [NEW] Global responsive theme-aware footer with email contact & copy utility
 │   │
 │   ├── fixtures/                 # Fixture-related components
 │   │   ├── FixtureList.tsx       # Master fixture list with filtering and grouping
@@ -132,9 +135,11 @@ wc2026/
 │   └── count-players.ts          # [NEW] Report player/squad seeding statistics from DB
 │
 └── public/                       # Static assets
+    ├── fifa-2026-logo.svg
     ├── file.svg
     ├── globe.svg
     ├── next.svg
+    ├── og-image.jpg              # [NEW] Premium optimized OpenGraph/Twitter preview banner (1200x630, 137KB)
     ├── vercel.svg
     └── window.svg
 ```
