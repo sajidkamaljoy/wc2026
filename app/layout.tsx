@@ -5,6 +5,7 @@ import { NavBar } from "@/components/NavBar";
 import { PageWrapper } from "@/components/PageWrapper";
 import { LiveScoreProvider } from "@/components/live/LiveScoreProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { Footer } from "@/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -79,6 +80,9 @@ export default function RootLayout({
             <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
               <PageWrapper>{children}</PageWrapper>
             </main>
+
+            {/* Global Footer */}
+            <Footer />
           </LiveScoreProvider>
         </ThemeProvider>
       </body>
