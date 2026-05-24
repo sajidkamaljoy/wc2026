@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "FIFA World Cup 2026™ Fan Companion Banner",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "FIFA World Cup 2026™ Fan Companion — Live Scores & Bracket",
     description: "Follow the 104-match tournament with real-time live scores, active group standings, and dynamic knockout seeding bracket pathways.",
-    images: ["/og-image.png"],
+    images: ["/og-image.jpg"],
   },
 };
 
