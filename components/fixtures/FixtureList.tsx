@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FixtureFilters } from "./FixtureFilters";
 import { FixtureCard } from "./FixtureCard";
 import { TimezoneBanner } from "../TimezoneBanner";
@@ -17,6 +17,9 @@ export function FixtureList() {
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPredictions, setUserPredictions] = useState<Record<string, { homeScore: number, awayScore: number }>>({});
+  
+  const [visibleCount, setVisibleCount] = useState<number>(10);
+  const observerTargetRef = useRef<HTMLDivElement>(null);
 
   const { favorites, isLoaded: favoritesLoaded } = useFavorites();
 
@@ -49,6 +52,7 @@ export function FixtureList() {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setVisibleCount(10);
 
     const params = new URLSearchParams({ sort: "date" });
     if (stageFilter) {
@@ -89,8 +93,39 @@ export function FixtureList() {
     )
     : matches;
 
+  // Reset scroll page whenever favorites filter changes
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [favoritesOnly]);
+
+  // Set up intersection observer for infinite scroll
+  useEffect(() => {
+    const observerTarget = observerTargetRef.current;
+    if (!observerTarget || displayedMatches.length <= visibleCount) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + 10, displayedMatches.length));
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" }
+    );
+
+    observer.observe(observerTarget);
+
+    return () => {
+      if (observerTarget) {
+        observer.unobserve(observerTarget);
+      }
+    };
+  }, [displayedMatches.length, visibleCount]);
+
+  // Slice matches according to visibleCount for infinite scroll
+  const slicedMatches = displayedMatches.slice(0, visibleCount);
+
   // Group by date
-  const grouped = groupByDate(displayedMatches);
+  const grouped = groupByDate(slicedMatches);
 
   return (
     <div className="w-full">
@@ -140,6 +175,14 @@ export function FixtureList() {
               </div>
             </div>
           ))}
+
+          {/* Observer Target & Loading State */}
+          {displayedMatches.length > visibleCount && (
+            <div ref={observerTargetRef} className="flex flex-col items-center justify-center py-6 gap-2 text-slate-400">
+              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+              <span className="text-xs font-medium tracking-wide animate-pulse">Loading more matches...</span>
+            </div>
+          )}
         </div>
       )}
     </div>
