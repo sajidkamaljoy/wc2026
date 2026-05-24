@@ -16,7 +16,7 @@ export function FixtureList() {
   const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userPredictions, setUserPredictions] = useState<Record<string, {homeScore: number, awayScore: number}>>({});
+  const [userPredictions, setUserPredictions] = useState<Record<string, { homeScore: number, awayScore: number }>>({});
 
   const { favorites, isLoaded: favoritesLoaded } = useFavorites();
 
@@ -30,7 +30,7 @@ export function FixtureList() {
         }
       })
       .catch((err) => console.error("Failed to fetch teams list:", err));
-      
+
     // Fetch user predictions
     fetch("/api/predictions")
       .then(res => res.json())
@@ -38,7 +38,7 @@ export function FixtureList() {
         if (data.predictions) {
           const map: Record<string, any> = {};
           data.predictions.forEach((p: any) => {
-             map[p.matchId] = p;
+            map[p.matchId] = p;
           });
           setUserPredictions(map);
         }
@@ -83,10 +83,10 @@ export function FixtureList() {
   // Apply favorites filtering in-memory
   const displayedMatches = favoritesOnly
     ? matches.filter(
-        (m) =>
-          (m.homeTeam?.id && favorites.includes(m.homeTeam.id)) ||
-          (m.awayTeam?.id && favorites.includes(m.awayTeam.id))
-      )
+      (m) =>
+        (m.homeTeam?.id && favorites.includes(m.homeTeam.id)) ||
+        (m.awayTeam?.id && favorites.includes(m.awayTeam.id))
+    )
     : matches;
 
   // Group by date

@@ -20,8 +20,10 @@
   --foreground: var(--slate-100);
 
   /* Contrast-boosted gold and sky badges */
+  --amber-300: #d97706; /* amber-600 in light mode */
   --amber-400: #d97706; /* amber-600 in light mode */
   --amber-500: #b45309;
+  --sky-300: #0284c7;   /* sky-600 in light mode */
   --sky-400: #0284c7;   /* sky-600 in light mode */
   --sky-500: #0369a1;
 }
@@ -46,8 +48,10 @@
   --foreground: var(--slate-100);
 
   /* Standard gold and sky */
+  --amber-300: #fcd34d; /* amber-300 */
   --amber-400: #fbbf24; /* amber-400 */
   --amber-500: #f59e0b; /* amber-500 */
+  --sky-300: #7dd3fc;   /* sky-300 */
   --sky-400: #38bdf8;   /* sky-400 */
   --sky-500: #0ea5e9;
 }
@@ -73,8 +77,10 @@
   --color-white: var(--white-dynamic);
 
   /* Dynamic mapping for amber and sky accents */
+  --color-amber-300: var(--amber-300);
   --color-amber-400: var(--amber-400);
   --color-amber-500: var(--amber-500);
+  --color-sky-300: var(--sky-300);
   --color-sky-400: var(--sky-400);
   --color-sky-500: var(--sky-500);
 }

@@ -34,83 +34,80 @@ export function FixtureCard({ match, userPrediction }: Props) {
   const isKnockout = !match.groupId;
 
   return (
-    <div className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
-      isLive 
-        ? "border-red-500/30 bg-gradient-to-r from-red-500/5 via-slate-900/40 to-slate-900/40 shadow-[0_4px_20px_rgba(239,68,68,0.08)]" 
+    <div className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${isLive
+        ? "border-red-500/30 bg-gradient-to-r from-red-500/5 via-slate-900/40 to-slate-900/40 shadow-[0_4px_20px_rgba(239,68,68,0.08)]"
         : "border-white/5 bg-slate-900/40 hover:border-white/10 hover:bg-slate-900/60 shadow-sm"
-    } flex flex-col w-full`}>
-      
+      } flex flex-col w-full`}>
+
       <div className="p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 w-full">
-      
-      {/* Group or Knockout Stage Badge */}
-      <div className="flex items-center gap-2 shrink-0 md:w-36 justify-center md:justify-start">
-        {isKnockout ? (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-400 uppercase tracking-widest">
-            <Trophy className="h-3 w-3 shrink-0" />
-            {stageName(match.stage)}
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-[10px] font-bold text-sky-400 uppercase tracking-widest">
-            Group {match.groupId}
-          </span>
-        )}
-      </div>
 
-      {/* Versus Display */}
-      <div className="flex items-center justify-center flex-1 w-full gap-4 sm:gap-6">
-        {/* Home Team */}
-        <TeamDisplay
-          team={match.homeTeam}
-          placeholder={match.homePlaceholder}
-          align="right"
-        />
-
-        {/* Score or Local Time display */}
-        <div className="flex flex-col items-center justify-center min-w-[100px] shrink-0">
-          {status === "SCHEDULED" ? (
-            <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-white/5 shadow-inner text-center">
-              <KickoffTime utcIso={match.kickoffUtc} showAbbr={true} />
-              <Countdown utcIso={match.kickoffUtc} />
-            </div>
+        {/* Group or Knockout Stage Badge */}
+        <div className="flex items-center gap-2 shrink-0 md:w-36 justify-center md:justify-start">
+          {isKnockout ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+              <Trophy className="h-3 w-3 shrink-0" />
+              {stageName(match.stage)}
+            </span>
           ) : (
-            <div className="flex flex-col items-center">
-              <span className={`font-mono font-extrabold text-2xl sm:text-3xl tracking-tight ${
-                isLive ? "text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "text-white"
-              }`}>
-                {homeScore ?? 0} <span className="text-slate-600 font-sans text-xl font-normal mx-0.5">–</span> {awayScore ?? 0}
-              </span>
-            </div>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-[10px] font-bold text-sky-400 uppercase tracking-widest">
+              Group {match.groupId}
+            </span>
           )}
-          <LiveScoreBadge status={status} minute={liveData?.minute} />
         </div>
 
-        {/* Away Team */}
-        <TeamDisplay
-          team={match.awayTeam}
-          placeholder={match.awayPlaceholder}
-          align="left"
-        />
+        {/* Versus Display */}
+        <div className="flex items-center justify-center flex-1 w-full gap-4 sm:gap-6">
+          {/* Home Team */}
+          <TeamDisplay
+            team={match.homeTeam}
+            placeholder={match.homePlaceholder}
+            align="right"
+          />
+
+          {/* Score or Local Time display */}
+          <div className="flex flex-col items-center justify-center min-w-[100px] shrink-0">
+            {status === "SCHEDULED" ? (
+              <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-white/5 shadow-inner text-center">
+                <KickoffTime utcIso={match.kickoffUtc} showAbbr={true} />
+                <Countdown utcIso={match.kickoffUtc} />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <span className={`font-mono font-extrabold text-2xl sm:text-3xl tracking-tight ${isLive ? "text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "text-white"
+                  }`}>
+                  {homeScore ?? 0} <span className="text-slate-600 font-sans text-xl font-normal mx-0.5">–</span> {awayScore ?? 0}
+                </span>
+              </div>
+            )}
+            <LiveScoreBadge status={status} minute={liveData?.minute} />
+          </div>
+
+          {/* Away Team */}
+          <TeamDisplay
+            team={match.awayTeam}
+            placeholder={match.awayPlaceholder}
+            align="left"
+          />
+        </div>
+
+        {/* Match Details (Venue) */}
+        <div className="flex flex-col items-center md:items-end justify-center gap-1 shrink-0 md:w-44 text-slate-500 text-[11px] font-medium">
+          <span className="flex items-center gap-1 text-center md:text-right hover:text-slate-400 transition-colors">
+            <MapPin className="h-3 w-3 text-slate-600 shrink-0" />
+            {match.venue.city}, {match.venue.country}
+          </span>
+        </div>
       </div>
 
-      {/* Match Details (Venue) */}
-      <div className="flex flex-col items-center md:items-end justify-center gap-1 shrink-0 md:w-44 text-slate-500 text-[11px] font-medium">
-        <span className="flex items-center gap-1 text-center md:text-right hover:text-slate-400 transition-colors">
-          <MapPin className="h-3 w-3 text-slate-600 shrink-0" />
-          {match.venue.city}, {match.venue.country}
-        </span>
-      </div>
-      </div>
-      
       {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
         <>
-          <div className="w-full mt-3 pt-3 border-t border-slate-800/50 flex justify-center px-4 pb-1">
+          <div className="w-full mt-3 pt-3 border-t border-white/10 flex justify-center px-4 pb-1">
             <button
               onClick={() => setIsModalOpen(true)}
-              className={`w-full py-2 px-6 rounded-xl font-semibold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${
-                localPrediction
+              className={`w-full py-2 px-6 rounded-xl font-semibold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${localPrediction
                   ? "bg-sky-500/10 border border-sky-400/20 text-sky-400 hover:bg-sky-500/25 hover:border-sky-400/35 active:scale-[0.98]"
                   : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold border border-amber-500/10 active:scale-[0.98]"
-              }`}
+                }`}
             >
               {localPrediction ? (
                 <>
@@ -171,9 +168,8 @@ function TeamDisplay({
   );
 
   const content = (
-    <div className={`flex items-center gap-2 flex-1 max-w-[150px] sm:max-w-[200px] ${
-      align === "right" ? "justify-end text-right" : "justify-start text-left"
-    }`}>
+    <div className={`flex items-center gap-2 flex-1 max-w-[150px] sm:max-w-[200px] ${align === "right" ? "justify-end text-right" : "justify-start text-left"
+      }`}>
       {align === "right" && starIndicator}
       {align === "right" && team?.flagUrl && (
         <img
@@ -183,9 +179,8 @@ function TeamDisplay({
           loading="lazy"
         />
       )}
-      <span className={`font-semibold text-xs sm:text-sm truncate transition-colors ${
-        hasTeam ? "text-slate-100 group-hover:text-white" : "text-slate-500 italic"
-      }`}>
+      <span className={`font-semibold text-xs sm:text-sm truncate transition-colors ${hasTeam ? "text-slate-100 group-hover:text-white" : "text-slate-500 italic"
+        }`}>
         {name}
       </span>
       {align === "left" && team?.flagUrl && (
