@@ -9,7 +9,7 @@ import type { GroupWithStandings } from "@/types";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Group Standings — FIFA World Cup 2026™",
+  title: "Group Standings",
   description:
     "Track live group standings for all 48 national teams across Groups A to L. Visual indicators for qualification and best third-place slots.",
 };

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Knockout Bracket — FIFA World Cup 2026™",
+  title: "Knockout Bracket",
   description: "View the full knockout stage bracket for the FIFA World Cup 2026™.",
 };
 

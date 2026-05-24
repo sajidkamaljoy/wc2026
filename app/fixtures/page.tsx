@@ -3,7 +3,7 @@ import { NewsFeed } from "@/components/news/NewsFeed";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Tournament Fixtures & Calendar — FIFA World Cup 2026™",
+  title: "Tournament Fixtures & Calendar",
   description: "View the official 104-match schedule of the FIFA World Cup 2026, filtered by group or knockout stages, automatically translated to your timezone.",
 };
 

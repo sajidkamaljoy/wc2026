@@ -4,7 +4,7 @@ import { Trophy, Target, User } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Fan Pick'em Leaderboard — FIFA World Cup 2026™",
+  title: "Fan Pick'em Leaderboard",
   description: "Predict match outcomes and compete on the global leaderboard.",
 };
 

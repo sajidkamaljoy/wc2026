@@ -25,17 +25,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!team) {
       return {
-        title: "Team Seeding Pathway — FIFA World Cup 2026™",
+        title: "Team Seeding Pathway",
       };
     }
 
     return {
-      title: `${team.name} Squad & Knockout Pathway — FIFA World Cup 2026™`,
+      title: `${team.name} Squad & Knockout Pathway`,
       description: `View official squad roster lists, positions, and track potential knockout stage opponents for ${team.name} in the FIFA World Cup 2026.`,
     };
   } catch {
     return {
-      title: "Team Seeding Pathway — FIFA World Cup 2026™",
+      title: "Team Seeding Pathway",
     };
   }
 }
