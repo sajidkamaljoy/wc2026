@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { FixtureFilters } from "./FixtureFilters";
 import { FixtureCard } from "./FixtureCard";
 import { TimezoneBanner } from "../TimezoneBanner";
@@ -19,7 +19,6 @@ export function FixtureList() {
   const [userPredictions, setUserPredictions] = useState<Record<string, { homeScore: number, awayScore: number }>>({});
   
   const [visibleCount, setVisibleCount] = useState<number>(10);
-  const observerTargetRef = useRef<HTMLDivElement>(null);
 
   const { favorites, isLoaded: favoritesLoaded } = useFavorites();
 
@@ -98,29 +97,6 @@ export function FixtureList() {
     setVisibleCount(10);
   }, [favoritesOnly]);
 
-  // Set up intersection observer for infinite scroll
-  useEffect(() => {
-    const observerTarget = observerTargetRef.current;
-    if (!observerTarget || displayedMatches.length <= visibleCount) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + 10, displayedMatches.length));
-        }
-      },
-      { threshold: 0.1, rootMargin: "200px" }
-    );
-
-    observer.observe(observerTarget);
-
-    return () => {
-      if (observerTarget) {
-        observer.unobserve(observerTarget);
-      }
-    };
-  }, [displayedMatches.length, visibleCount]);
-
   // Slice matches according to visibleCount for infinite scroll
   const slicedMatches = displayedMatches.slice(0, visibleCount);
 
@@ -176,11 +152,18 @@ export function FixtureList() {
             </div>
           ))}
 
-          {/* Observer Target & Loading State */}
+          {/* Load More Button */}
           {displayedMatches.length > visibleCount && (
-            <div ref={observerTargetRef} className="flex flex-col items-center justify-center py-6 gap-2 text-slate-400">
-              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
-              <span className="text-xs font-medium tracking-wide animate-pulse">Loading more matches...</span>
+            <div className="flex justify-center pt-8">
+              <button
+                onClick={() => setVisibleCount((prev) => Math.min(prev + 10, displayedMatches.length))}
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.99] active:duration-75"
+              >
+                <span>Load More Matches</span>
+                <span className="text-xs font-normal text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-200">
+                  ({displayedMatches.length - visibleCount} remaining)
+                </span>
+              </button>
             </div>
           )}
         </div>
