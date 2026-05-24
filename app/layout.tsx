@@ -14,24 +14,33 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://fifawc2026.me"),
   title: {
-    default: "FIFA World Cup 2026™ Fan Companion",
+    default: "FIFA World Cup 2026™ Fan Companion — Live Scores & Bracket",
     template: "%s | FIFA World Cup 2026™ Fan Companion",
   },
   description: "Follow the 104-match tournament with real-time live scores, active group standings, and dynamic knockout seeding bracket pathways.",
   keywords: ["FIFA", "World Cup 2026", "Live Scores", "Standings", "Fixtures", "Knockout Bracket", "Seeding", "Predictions", "Pick'em"],
   authors: [{ name: "FIFA Fan Network" }],
   openGraph: {
-    title: "FIFA World Cup 2026™ Fan Companion",
+    title: "FIFA World Cup 2026™ Fan Companion — Live Scores & Bracket",
     description: "Follow the 104-match tournament with real-time live scores, active group standings, and dynamic knockout seeding bracket pathways.",
     url: "https://fifawc2026.me",
     siteName: "FIFA World Cup 2026™ Fan Companion",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "FIFA World Cup 2026™ Fan Companion Banner",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "FIFA World Cup 2026™ Fan Companion",
+    title: "FIFA World Cup 2026™ Fan Companion — Live Scores & Bracket",
     description: "Follow the 104-match tournament with real-time live scores, active group standings, and dynamic knockout seeding bracket pathways.",
+    images: ["/og-image.png"],
   },
 };
 
