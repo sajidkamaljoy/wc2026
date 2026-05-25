@@ -43,6 +43,11 @@
 | `dotenv` | ^17.4.2 | Environment variable loading in scripts |
 | `eslint` | ^9 | Linting |
 | `eslint-config-next` | 16.2.6 | Next.js ESLint rules (core-web-vitals + TypeScript) |
+| `vitest` | ^3.2.4 | Modern, lightning-fast unit testing runner |
+| `jsdom` | ^27.0.1 | Headless DOM environment for React tests |
+| `@testing-library/react` | ^16.3.2 | Component and UI testing helper |
+| `@testing-library/jest-dom` | ^6.9.1 | Jest-style DOM assertion utilities (`toBeInTheDocument`, etc.) |
+| `@testing-library/dom` | ^10.4.1 | Underlying DOM query utilities |
 
 ## Build & Development
 
@@ -53,6 +58,8 @@
 | Start Production | `npm run start` → `next start` | Serves production bundle |
 | Lint | `npm run lint` → `eslint` | Uses `eslint.config.mjs` flat config |
 | DB Seed | `tsx prisma/seed.ts` | Configured via `prisma.config.ts` |
+| Run Tests | `npm run test` → `vitest run` | Executes all unit tests once |
+| Watch Tests | `npm run test:watch` → `vitest` | Watches files and re-runs tests on change |
 
 ## Configuration Files
 
@@ -63,6 +70,8 @@
 | `postcss.config.mjs` | PostCSS with `@tailwindcss/postcss` plugin |
 | `eslint.config.mjs` | Flat ESLint config with core-web-vitals + TypeScript |
 | `prisma.config.ts` | Prisma config with seed command and datasource URL |
+| `vitest.config.ts` | Vitest configuration file (jsdom env, alias resolver, setup hooks) |
+| `tests/setup.ts` | Global testing setup file (localStorage and fetch mocking, jest-dom imports) |
 | `.env` / `.env.local` | Environment variables (DATABASE_URL, API keys) |
 | `.gitignore` | Excludes `node_modules`, `.next`, `.env*`, build artifacts |
 

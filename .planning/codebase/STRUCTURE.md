@@ -19,6 +19,7 @@ wc2026/
 ├── postcss.config.mjs            # PostCSS with Tailwind v4
 ├── eslint.config.mjs             # Flat ESLint config
 ├── prisma.config.ts              # Prisma config with seed command
+├── vitest.config.ts              # [NEW] Vitest testing environment configuration
 │
 ├── prisma/                       # Database layer
 │   ├── schema.prisma             # Data model (5 models, 4 enums)
@@ -32,7 +33,7 @@ wc2026/
 │   ├── layout.tsx                # Root layout (Inter font, NavBar, LiveScoreProvider, PageWrapper, Footer)
 │   ├── page.tsx                  # Home → redirect to /fixtures
 │   ├── globals.css               # Tailwind import, CSS vars, fade-in animation
-│   ├── favicon.ico               # App icon
+│   ├── icon.svg                  # [NEW] Premium custom gold/amber soccer trophy SVG favicon
 │   ├── sitemap.ts                # [NEW] Dynamic sitemap.xml generator (crawls teams + static)
 │   ├── robots.ts                 # [NEW] Dynamic robots.txt crawler boundaries
 │   │
@@ -134,6 +135,19 @@ wc2026/
 │   ├── update-squad.ts           # Update squad data for teams
 │   └── count-players.ts          # [NEW] Report player/squad seeding statistics from DB
 │
+├── tests/                        # [NEW] Comprehensive Unit & UI testing suite
+│   ├── setup.ts                  # Testing setup: mocked localStorage/fetch, jest-dom matchers
+│   ├── lib/                      # Tests for utility and calculation libraries
+│   │   ├── timezone.test.ts      # Tests for localized date/time conversions
+│   │   ├── pathway.test.ts       # Tests for seeding and tournament bracket paths
+│   │   └── news-api.test.ts      # Tests for news fetching, deduplication & mocks
+│   ├── hooks/                    # Tests for custom React hooks
+│   │   └── useFavorites.test.ts  # Tests for favorites array toggles and caching
+│   ├── api/                      # Tests for dynamic route handlers
+│   │   └── sentiment-route.test.ts # Tests for fan mood sentiment analysis scores
+│   └── components/               # Tests for UI and interactive components
+│       └── Countdown.test.tsx    # Tests for pulsing kickoff countdown timer
+│
 └── public/                       # Static assets
     ├── fifa-2026-logo.svg
     ├── file.svg
@@ -159,6 +173,8 @@ wc2026/
 | Team detail widgets | `components/team/` |
 | Utility scripts | `scripts/` |
 | Seed data | `prisma/seed.ts` + `prisma/squadsData.ts` |
+| Unit & UI test suites | `tests/` |
+| Test configuration & setups | `vitest.config.ts` + `tests/setup.ts` |
 
 ## Naming Conventions
 
@@ -172,6 +188,7 @@ wc2026/
 | Loading skeletons | `loading.tsx` co-located with page | `app/fixtures/loading.tsx` |
 | Type files | `index.ts` barrel export | `types/index.ts` |
 | Script files | kebab-case | `test-api.ts`, `count-players.ts` |
+| Test files | Suffix with `.test.ts` or `.test.tsx` in co-located subdirectory in `tests/` | `Countdown.test.tsx`, `timezone.test.ts` |
 | CSS variables | `--kebab-case` | `--background`, `--foreground` |
 | DB model fields | camelCase | `kickoffUtc`, `homeTeamId`, `goalsFor` |
 | DB model names | PascalCase | `Team`, `Match`, `Player` |
