@@ -41,7 +41,7 @@ export async function GET(
       });
     }
 
-    // 3. Use in-memory cache (1 hour TTL) to avoid hammering Gemini API on every page load
+    // 3. Use in-memory cache (1 hour TTL) to avoid hammering Hugging Face API on every page load
     const sentimentResult = await memCache(
       `sentiment-${teamId}`,
       async () => {
@@ -53,72 +53,59 @@ export async function GET(
           sentiment: number;
         }[] = [];
         let averageScore = 0;
-        let analyzedWithGemini = false;
+        let analyzedWithHF = false;
 
-        // Try Gemini API for advanced, context-aware sentiment analysis
-        if (process.env.GEMINI_API_KEY) {
+        // Try Hugging Face Inference API for advanced, transformer-based sentiment analysis
+        if (process.env.HUGGINGFACE_API_KEY) {
           try {
-            const prompt = `You are a sports sentiment analyzer. Analyze the public fan mood and media sentiment for the soccer team "${teamName}" based on these ${articles.length} news headlines.
-For each headline, assign a sentiment score between -5.0 (extremely negative/disastrous) and +5.0 (extremely positive/glorious). A score of 0.0 is completely neutral.
-Also calculate the overall average sentiment score for the team.
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
 
-Return ONLY a JSON object matching this schema:
-{
-  "averageScore": number, // between -5.0 and +5.0
-  "headlines": [
-    {
-      "title": string, // must match the input title exactly
-      "score": number // between -5.0 and +5.0
-    }
-  ]
-}
-
-Input Headlines:
-${articles.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}
-`;
-
-            const geminiRes = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            const hfRes = await fetch(
+              "https://router.huggingface.co/hf-inference/models/cardiffnlp/twitter-roberta-base-sentiment-latest",
               {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
+                  Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                 },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        {
-                          text: prompt,
-                        },
-                      ],
-                    },
-                  ],
-                  generationConfig: {
-                    responseMimeType: "application/json",
-                  },
-                }),
+                body: JSON.stringify({ inputs: articles.map((a) => a.title) }),
+                signal: controller.signal,
                 cache: "no-store",
               }
             );
+            clearTimeout(timeoutId);
 
-            if (!geminiRes.ok) {
-              throw new Error(`Gemini API returned status ${geminiRes.status}`);
+            if (!hfRes.ok) {
+              throw new Error(`Hugging Face API returned status ${hfRes.status}`);
             }
 
-            const geminiData = await geminiRes.json();
-            const textResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!textResponse) {
-              throw new Error("Invalid response structure from Gemini API");
-            }
-
-            const parsed = JSON.parse(textResponse);
+            const hfData = await hfRes.json();
             
-            headlines = articles.map((article) => {
-              const parsedItem = parsed.headlines?.find(
-                (h: any) => h.title?.toLowerCase() === article.title?.toLowerCase()
-              );
-              const sentimentScore = parsedItem ? parsedItem.score : 0;
+            if (!Array.isArray(hfData)) {
+              throw new Error("Invalid response structure from Hugging Face API");
+            }
+
+            headlines = articles.map((article, idx) => {
+              const predictions = hfData[idx];
+              let sentimentScore = 0;
+
+              if (Array.isArray(predictions)) {
+                let positiveProb = 0;
+                let negativeProb = 0;
+
+                for (const pred of predictions) {
+                  const label = pred.label?.toLowerCase() || "";
+                  const score = pred.score || 0;
+                  if (label === "positive" || label === "label_2" || label === "pos" || label.includes("positive")) {
+                    positiveProb = score;
+                  } else if (label === "negative" || label === "label_0" || label === "neg" || label.includes("negative")) {
+                    negativeProb = score;
+                  }
+                }
+                sentimentScore = (positiveProb * 5.0) - (negativeProb * 5.0);
+              }
+
               return {
                 title: article.title,
                 url: article.url,
@@ -128,33 +115,98 @@ ${articles.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}
               };
             });
 
-            averageScore = parsed.averageScore ?? (headlines.reduce((acc, h) => acc + h.sentiment, 0) / headlines.length);
-            analyzedWithGemini = true;
-          } catch (geminiError: any) {
-            const isRateLimit = geminiError.message?.includes("status 429") || geminiError.message?.includes("Rate Limit");
-            if (isRateLimit) {
-              console.warn("⚠️ [Gemini API] Rate limit reached (429) or quota exceeded. Falling back gracefully to local lexicon analysis.");
+            averageScore = headlines.reduce((acc, h) => acc + h.sentiment, 0) / headlines.length;
+            analyzedWithHF = true;
+          } catch (hfError: any) {
+            const isTimeout = hfError.name === "AbortError";
+            if (isTimeout) {
+              console.warn("⚠️ [Hugging Face API] Request timed out (1.5s). Falling back gracefully to local lexicon analysis.");
             } else {
-              console.warn("⚠️ [Gemini API] Sentiment analysis failed, falling back to local library:", geminiError.message || geminiError);
+              console.warn("⚠️ [Hugging Face API] Sentiment analysis failed, falling back to local library:", hfError.message || hfError);
             }
           }
         }
 
-        // Fallback to local lexicon sentiment analyzer if Gemini is not configured or failed
-        if (!analyzedWithGemini) {
+        // Fallback to local lexicon sentiment analyzer if Hugging Face is not configured or failed
+        if (!analyzedWithHF) {
           const sentimentAnalyzer = new Sentiment();
+          const customLexicon = {
+            // Positive sports words
+            "masterclass": 4,
+            "superb": 4,
+            "outstanding": 4,
+            "brilliant": 4,
+            "glorious": 4,
+            "triumph": 4,
+            "triumphant": 4,
+            "champion": 4,
+            "win": 3,
+            "wins": 3,
+            "winning": 3,
+            "won": 3,
+            "unbeaten": 3,
+            "undefeated": 3,
+            "qualify": 3,
+            "qualifies": 3,
+            "qualified": 3,
+            "dominate": 3,
+            "dominating": 3,
+            "dominated": 3,
+            "impressive": 3,
+            "star": 3,
+            "hero": 3,
+            "genius": 3,
+            "confident": 2,
+            "draw": 1,
+            "draws": 1,
+            "tie": 1,
+            
+            // Negative sports words
+            "defeat": -3,
+            "defeated": -3,
+            "defeats": -3,
+            "lose": -3,
+            "loses": -3,
+            "lost": -3,
+            "loss": -3,
+            "fail": -3,
+            "fails": -3,
+            "failed": -3,
+            "failure": -3,
+            "struggle": -2,
+            "struggling": -2,
+            "poor": -3,
+            "weak": -3,
+            "injured": -2,
+            "injury": -2,
+            "injuries": -2,
+            "disaster": -4,
+            "disastrous": -4,
+            "devastated": -4,
+            "eliminated": -4,
+            "sacked": -4,
+            "fired": -4,
+            "crash": -4,
+            "crashed": -4,
+            "awful": -4,
+            "terrible": -4,
+          };
+
           let totalScore = 0;
 
           headlines = articles.map((article) => {
-            const result = sentimentAnalyzer.analyze(article.title);
-            totalScore += result.score;
+            const result = sentimentAnalyzer.analyze(article.title, { extras: customLexicon });
+            let localScore = result.score;
+            if (localScore > 5) localScore = 5;
+            if (localScore < -5) localScore = -5;
+            totalScore += localScore;
 
             return {
               title: article.title,
               url: article.url,
               source: article.source,
               publishedAt: article.publishedAt,
-              sentiment: result.score
+              sentiment: localScore
             };
           });
 

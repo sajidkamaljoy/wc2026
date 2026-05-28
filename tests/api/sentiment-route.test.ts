@@ -100,10 +100,10 @@ describe("sentiment API route", () => {
     expect(json.label).toBe("Neutral");
   });
 
-  it("should calculate positive sentiment using Gemini API when key is configured", async () => {
+  it("should calculate positive sentiment using Hugging Face API when key is configured", async () => {
     // 1. Mock env key
-    const originalApiKey = process.env.GEMINI_API_KEY;
-    process.env.GEMINI_API_KEY = "test-gemini-key";
+    const originalApiKey = process.env.HUGGINGFACE_API_KEY;
+    process.env.HUGGINGFACE_API_KEY = "test-hf-key";
 
     // 2. Mock DB call
     vi.mocked(prisma.team.findUnique).mockResolvedValue({ name: "Argentina" } as any);
@@ -124,31 +124,24 @@ describe("sentiment API route", () => {
       },
     ]);
 
-    // 4. Mock global fetch for Gemini API
-    const mockGeminiResponse = {
-      candidates: [
-        {
-          content: {
-            parts: [
-              {
-                text: JSON.stringify({
-                  averageScore: 3.5,
-                  headlines: [
-                    { title: "Argentina plays an amazing, beautiful, and superb match", score: 4.5 },
-                    { title: "Argentina team is in good spirits, looking confident", score: 2.5 }
-                  ]
-                })
-              }
-            ]
-          }
-        }
+    // 4. Mock global fetch for Hugging Face API
+    const mockHFResponse = [
+      [
+        { label: "positive", score: 0.95 },
+        { label: "neutral", score: 0.04 },
+        { label: "negative", score: 0.01 }
+      ],
+      [
+        { label: "positive", score: 0.8 },
+        { label: "neutral", score: 0.18 },
+        { label: "negative", score: 0.02 }
       ]
-    };
+    ];
 
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => mockGeminiResponse,
+      json: async () => mockHFResponse,
     } as any);
 
     try {
@@ -161,25 +154,26 @@ describe("sentiment API route", () => {
       expect(response.status).toBe(200);
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("https://generativelanguage.googleapis.com"),
+        expect.stringContaining("https://router.huggingface.co/hf-inference/models"),
         expect.any(Object)
       );
-      expect(json.score).toBe(3.5);
+      // Average score should be: ((0.95 - 0.01) * 5 + (0.8 - 0.02) * 5) / 2 = (4.7 + 3.9) / 2 = 4.3
+      expect(json.score).toBe(4.3);
       expect(json.label).toBe("Very Positive");
       expect(json.emoji).toBe("😍");
-      expect(json.headlines[0].sentiment).toBe(4.5);
-      expect(json.headlines[1].sentiment).toBe(2.5);
+      expect(json.headlines[0].sentiment).toBe(4.7);
+      expect(json.headlines[1].sentiment).toBe(3.9);
     } finally {
       // Cleanup env and global fetch
-      process.env.GEMINI_API_KEY = originalApiKey;
+      process.env.HUGGINGFACE_API_KEY = originalApiKey;
       global.fetch = originalFetch;
     }
   });
 
-  it("should fallback to local sentiment library if Gemini API call fails", async () => {
+  it("should fallback to local sentiment library if Hugging Face API call fails", async () => {
     // 1. Mock env key
-    const originalApiKey = process.env.GEMINI_API_KEY;
-    process.env.GEMINI_API_KEY = "test-gemini-key";
+    const originalApiKey = process.env.HUGGINGFACE_API_KEY;
+    process.env.HUGGINGFACE_API_KEY = "test-hf-key";
 
     // 2. Mock DB call
     vi.mocked(prisma.team.findUnique).mockResolvedValue({ name: "Argentina" } as any);
@@ -196,7 +190,7 @@ describe("sentiment API route", () => {
 
     // 4. Mock global fetch to fail (throws error)
     const originalFetch = global.fetch;
-    global.fetch = vi.fn().mockRejectedValue(new Error("Gemini API Rate Limit Exceeded"));
+    global.fetch = vi.fn().mockRejectedValue(new Error("Hugging Face API Rate Limit Exceeded"));
 
     try {
       const request = new Request("http://localhost/api/teams/arg/sentiment");
@@ -213,7 +207,7 @@ describe("sentiment API route", () => {
       expect(json.headlines[0].sentiment).toBeGreaterThan(0);
     } finally {
       // Cleanup env and global fetch
-      process.env.GEMINI_API_KEY = originalApiKey;
+      process.env.HUGGINGFACE_API_KEY = originalApiKey;
       global.fetch = originalFetch;
     }
   });
