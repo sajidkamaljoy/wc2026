@@ -100,66 +100,23 @@ export function PathwayBracket({ teamId }: Props) {
   const isLower = typeof pathway.currentGroupPosition === "number" && pathway.currentGroupPosition > 3;
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Back Button */}
-      <Link
-        href="/groups"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition-colors mb-6 cursor-pointer"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Groups
-      </Link>
-
-      {/* Header Profile Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-sm shadow-sm mb-8">
-        <div className="flex items-center gap-4.5">
-          {pathway.team.flagUrl ? (
-            <img
-              src={pathway.team.flagUrl}
-              alt={pathway.team.name}
-              className="h-12 w-20 object-cover rounded-lg shadow-lg border border-white/10"
-            />
-          ) : (
-            <div className="h-12 w-20 bg-slate-800 rounded-lg border border-white/5" />
-          )}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              {pathway.team.name}
-              <span className="text-xs font-bold font-mono text-slate-500 uppercase bg-slate-950 border border-white/5 px-2 py-0.5 rounded">
-                {pathway.team.id}
-              </span>
-            </h1>
-            <p className="text-sm text-slate-400 font-medium mt-0.5">
-              Group {pathway.team.groupId} ·{" "}
-              {pathway.currentGroupPosition === "TBD" ? (
-                <span className="text-slate-500 italic">Position TBD</span>
-              ) : (
-                <span className="text-amber-400 font-semibold">
-                  Currently {ordinal(Number(pathway.currentGroupPosition))} place
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* Action badge */}
-        <div className="flex items-center">
-          {isLower ? (
-            <span className="px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-bold text-red-400 flex items-center gap-1.5 uppercase tracking-wide">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              Not Qualified Zone
-            </span>
-          ) : (
-            <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wide">
-              <Trophy className="h-4 w-4 shrink-0" />
-              Potential Seeding
-            </span>
-          )}
-        </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Section Header */}
+      <div className="flex flex-col gap-2 border-t border-slate-900/60 pt-12">
+        <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          <span className="bg-amber-500/10 text-amber-400 p-2 rounded-xl border border-amber-500/20 shrink-0">
+            <Trophy className="h-5 w-5" />
+          </span>
+          Knockout Stage Pathway
+        </h2>
+        <p className="text-xs md:text-sm text-slate-400 font-medium max-w-xl">
+          Explore dynamic, real-time qualification pathways and potential opponents based on active standings.
+        </p>
       </div>
 
       {/* Seeding warnings */}
       {isThirdPlace && (
-        <div className="flex gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-300/80 text-xs font-medium max-w-2xl mb-8 leading-relaxed">
+        <div className="flex gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-300/80 text-xs font-medium max-w-2xl leading-relaxed">
           <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <strong className="text-amber-300">Third-place qualification conditional:</strong> {pathway.team.name} is currently third in Group {pathway.team.groupId}. Under World Cup rules, only the 8 best third-place teams out of 12 groups advance. If they do not rank among the top 8, they will be eliminated.
@@ -168,7 +125,7 @@ export function PathwayBracket({ teamId }: Props) {
       )}
 
       {isLower && (
-        <div className="flex gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/5 text-red-300/80 text-xs font-medium max-w-2xl mb-8 leading-relaxed">
+        <div className="flex gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/5 text-red-300/80 text-xs font-medium max-w-2xl leading-relaxed">
           <ShieldAlert className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
           <div>
             <strong className="text-red-300">Elimination Zone:</strong> {pathway.team.name} is currently fourth in Group {pathway.team.groupId}. Under official rules, fourth-place teams are eliminated. The bracket shown below is calculated assuming they improve standings to qualify.

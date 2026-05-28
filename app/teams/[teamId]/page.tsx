@@ -3,6 +3,7 @@ import { SquadView } from "@/components/squad/SquadView";
 import { TeamForm } from "@/components/team/TeamForm";
 import { FanMood } from "@/components/team/FanMood";
 import { TeamMatches } from "@/components/team/TeamMatches";
+import { TeamHeader } from "@/components/team/TeamHeader";
 import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -47,12 +48,26 @@ export default async function TeamPage({ params }: Props) {
   // Validate team exists, else redirect to standings page
   const team = await prisma.team.findUnique({
     where: { id: upperTeamId },
-    select: { id: true, name: true },
+    include: {
+      group: {
+        include: {
+          teams: {
+            orderBy: [
+              { points: "desc" },
+              { goalsFor: "desc" }
+            ]
+          }
+        }
+      }
+    }
   });
 
   if (!team) {
     redirect("/groups");
   }
+
+  // Calculate current group position
+  const groupPosition = team.group.teams.findIndex((t) => t.id === team.id) + 1;
 
   const dbMatches = await prisma.match.findMany({
     where: {
@@ -89,6 +104,8 @@ export default async function TeamPage({ params }: Props) {
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-10 pb-24 px-4 sm:px-0">
+      <TeamHeader team={team} groupPosition={groupPosition} />
+
       <TeamMatches matches={matches} teamName={team.name} />
 
       <PathwayBracket teamId={upperTeamId} />
