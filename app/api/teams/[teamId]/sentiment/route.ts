@@ -59,7 +59,7 @@ export async function GET(
         if (process.env.HUGGINGFACE_API_KEY) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1500);
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
             const hfRes = await fetch(
               "https://router.huggingface.co/hf-inference/models/cardiffnlp/twitter-roberta-base-sentiment-latest",
@@ -120,7 +120,7 @@ export async function GET(
           } catch (hfError: any) {
             const isTimeout = hfError.name === "AbortError";
             if (isTimeout) {
-              console.warn("⚠️ [Hugging Face API] Request timed out (1.5s). Falling back gracefully to local lexicon analysis.");
+              console.warn("⚠️ [Hugging Face API] Request timed out (30s). Falling back gracefully to local lexicon analysis.");
             } else {
               console.warn("⚠️ [Hugging Face API] Sentiment analysis failed, falling back to local library:", hfError.message || hfError);
             }
@@ -190,6 +190,37 @@ export async function GET(
             "crashed": -4,
             "awful": -4,
             "terrible": -4,
+
+            // Football-specific terms
+            "knockout":    -3,
+            "relegated":   -4,
+            "suspended":   -2,
+            "banned":      -3,
+            "controversy": -2,
+            "VAR":          0,  // neutral by itself
+            "penalty":      0,  // neutral by itself
+            "red card":    -2,
+            "own goal":    -2,
+            "comeback":     3,
+            "clean sheet":  3,
+            "hat trick":    4,
+            "hat-trick":    4,
+            "quarterfinal": 1,
+            "semifinal":    2,
+            "final":        2,
+            "trophy":       4,
+            "title":        2,
+            "glory":        4,
+            "heartbreak":  -3,
+            "stunner":      3,
+            "upset":       -2,  // "upset" in sports = underdog win, often negative for favourite
+            "crisis":      -3,
+            "row":         -2,  // e.g. "contract row"
+            "blow":        -3,  // e.g. "injury blow"
+            "boost":        3,
+            "hope":         2,
+            "fear":        -2,
+            "doubt":       -1,
           };
 
           let totalScore = 0;
