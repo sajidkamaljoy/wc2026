@@ -8,6 +8,7 @@ const getAllTeams = unstable_cache(
       select: {
         id: true,
         name: true,
+        flagUrl: true,
       },
       orderBy: { name: "asc" },
     });

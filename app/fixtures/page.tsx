@@ -1,4 +1,4 @@
-import { FixtureList } from "@/components/fixtures/FixtureList";
+import { FixturesTabsContainer } from "@/components/fixtures/FixturesTabsContainer";
 import { NewsFeed } from "@/components/news/NewsFeed";
 import type { Metadata } from "next";
 
@@ -19,8 +19,8 @@ export default function FixturesPage() {
         </h1>
       </div>
 
-      {/* Fixtures list organizer */}
-      <FixtureList />
+      {/* Fixtures tabbed container */}
+      <FixturesTabsContainer />
     </div>
   );
 }
