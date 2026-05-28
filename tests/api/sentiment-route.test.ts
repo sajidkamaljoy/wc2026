@@ -97,4 +97,122 @@ describe("sentiment API route", () => {
     expect(json.error).toBe("Internal Server Error");
     expect(json.label).toBe("Neutral");
   });
+
+  it("should calculate positive sentiment using Gemini API when key is configured", async () => {
+    // 1. Mock env key
+    const originalApiKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = "test-gemini-key";
+
+    // 2. Mock DB call
+    vi.mocked(prisma.team.findUnique).mockResolvedValue({ name: "Argentina" } as any);
+
+    // 3. Mock getTeamNews
+    vi.mocked(getTeamNews).mockResolvedValue([
+      {
+        title: "Argentina plays an amazing, beautiful, and superb match",
+        url: "http://example.com/1",
+        source: "Daily Footy",
+        publishedAt: "2026-05-25T12:00:00Z",
+      },
+      {
+        title: "Argentina team is in good spirits, looking confident",
+        url: "http://example.com/2",
+        source: "Daily Footy",
+        publishedAt: "2026-05-25T12:05:00Z",
+      },
+    ]);
+
+    // 4. Mock global fetch for Gemini API
+    const mockGeminiResponse = {
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: JSON.stringify({
+                  averageScore: 3.5,
+                  headlines: [
+                    { title: "Argentina plays an amazing, beautiful, and superb match", score: 4.5 },
+                    { title: "Argentina team is in good spirits, looking confident", score: 2.5 }
+                  ]
+                })
+              }
+            ]
+          }
+        }
+      ]
+    };
+
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockGeminiResponse,
+    } as any);
+
+    try {
+      const request = new Request("http://localhost/api/teams/arg/sentiment");
+      const params = Promise.resolve({ teamId: "arg" });
+
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("https://generativelanguage.googleapis.com"),
+        expect.any(Object)
+      );
+      expect(json.score).toBe(3.5);
+      expect(json.label).toBe("Very Positive");
+      expect(json.emoji).toBe("😍");
+      expect(json.headlines[0].sentiment).toBe(4.5);
+      expect(json.headlines[1].sentiment).toBe(2.5);
+    } finally {
+      // Cleanup env and global fetch
+      process.env.GEMINI_API_KEY = originalApiKey;
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("should fallback to local sentiment library if Gemini API call fails", async () => {
+    // 1. Mock env key
+    const originalApiKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = "test-gemini-key";
+
+    // 2. Mock DB call
+    vi.mocked(prisma.team.findUnique).mockResolvedValue({ name: "Argentina" } as any);
+
+    // 3. Mock getTeamNews
+    vi.mocked(getTeamNews).mockResolvedValue([
+      {
+        title: "Argentina plays an amazing, beautiful, and superb match",
+        url: "http://example.com/1",
+        source: "Daily Footy",
+        publishedAt: "2026-05-25T12:00:00Z",
+      },
+    ]);
+
+    // 4. Mock global fetch to fail (throws error)
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockRejectedValue(new Error("Gemini API Rate Limit Exceeded"));
+
+    try {
+      const request = new Request("http://localhost/api/teams/arg/sentiment");
+      const params = Promise.resolve({ teamId: "arg" });
+
+      const response = await GET(request, { params });
+      const json = await response.json();
+
+      // Should still succeed because of fallback
+      expect(response.status).toBe(200);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      // Fallback lexicon score for "amazing, beautiful, and superb" is positive
+      expect(json.score).toBeGreaterThan(0);
+      expect(json.headlines[0].sentiment).toBeGreaterThan(0);
+    } finally {
+      // Cleanup env and global fetch
+      process.env.GEMINI_API_KEY = originalApiKey;
+      global.fetch = originalFetch;
+    }
+  });
 });

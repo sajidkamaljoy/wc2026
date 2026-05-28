@@ -40,26 +40,117 @@ export async function GET(
       });
     }
 
-    // 3. Initialize sentiment analyzer and score articles
-    const sentimentAnalyzer = new Sentiment();
-    let totalScore = 0;
+    let headlines: {
+      title: string;
+      url: string;
+      source: string;
+      publishedAt: string;
+      sentiment: number;
+    }[] = [];
+    let averageScore = 0;
+    let analyzedWithGemini = false;
 
-    const headlines = articles.map((article) => {
-      const result = sentimentAnalyzer.analyze(article.title);
-      totalScore += result.score;
+    // 3. Try to use Gemini API for advanced, context-aware sentiment analysis
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const prompt = `You are a sports sentiment analyzer. Analyze the public fan mood and media sentiment for the soccer team "${teamName}" based on these ${articles.length} news headlines.
+For each headline, assign a sentiment score between -5.0 (extremely negative/disastrous) and +5.0 (extremely positive/glorious). A score of 0.0 is completely neutral.
+Also calculate the overall average sentiment score for the team.
 
-      return {
-        title: article.title,
-        url: article.url,
-        source: article.source,
-        publishedAt: article.publishedAt,
-        sentiment: result.score
-      };
-    });
+Return ONLY a JSON object matching this schema:
+{
+  "averageScore": number, // between -5.0 and +5.0
+  "headlines": [
+    {
+      "title": string, // must match the input title exactly
+      "score": number // between -5.0 and +5.0
+    }
+  ]
+}
 
-    const averageScore = totalScore / articles.length;
+Input Headlines:
+${articles.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}
+`;
 
-    // 4. Map average score to labels, emojis, and colors
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: prompt,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                responseMimeType: "application/json",
+              },
+            }),
+          }
+        );
+
+        if (!geminiRes.ok) {
+          throw new Error(`Gemini API returned status ${geminiRes.status}`);
+        }
+
+        const geminiData = await geminiRes.json();
+        const textResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!textResponse) {
+          throw new Error("Invalid response structure from Gemini API");
+        }
+
+        const parsed = JSON.parse(textResponse);
+        
+        headlines = articles.map((article) => {
+          const parsedItem = parsed.headlines?.find(
+            (h: any) => h.title?.toLowerCase() === article.title?.toLowerCase()
+          );
+          const sentimentScore = parsedItem ? parsedItem.score : 0;
+          return {
+            title: article.title,
+            url: article.url,
+            source: article.source,
+            publishedAt: article.publishedAt,
+            sentiment: Math.round(sentimentScore * 100) / 100
+          };
+        });
+
+        averageScore = parsed.averageScore ?? (headlines.reduce((acc, h) => acc + h.sentiment, 0) / headlines.length);
+        analyzedWithGemini = true;
+      } catch (geminiError) {
+        console.error("Gemini sentiment analysis failed, falling back to local library:", geminiError);
+      }
+    }
+
+    // 4. Fallback to local lexicon sentiment analyzer if Gemini is not configured or failed
+    if (!analyzedWithGemini) {
+      const sentimentAnalyzer = new Sentiment();
+      let totalScore = 0;
+
+      headlines = articles.map((article) => {
+        const result = sentimentAnalyzer.analyze(article.title);
+        totalScore += result.score;
+
+        return {
+          title: article.title,
+          url: article.url,
+          source: article.source,
+          publishedAt: article.publishedAt,
+          sentiment: result.score
+        };
+      });
+
+      averageScore = totalScore / articles.length;
+    }
+
+    // 5. Map average score to labels, emojis, and colors
     let label = "Neutral";
     let emoji = "😐";
     let colorClass = "text-slate-400 bg-slate-400/10 border-slate-400/20";
