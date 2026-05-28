@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { memCache } from "@/lib/mem-cache";
 
 export async function GET(
   request: Request,
@@ -20,13 +21,18 @@ export async function GET(
   const teamName = team.name;
 
   try {
-    // 2. Fetch the highly reliable martj42 international results CSV
-    const res = await fetch('https://raw.githubusercontent.com/martj42/international_results/master/results.csv', {
-      next: { revalidate: 3600 } // Cache for 1 hour to keep it fast
-    });
-
-    if (!res.ok) throw new Error("Failed to fetch match data");
-    const text = await res.text();
+    // 2. Fetch the CSV (cached in-memory for 1 hour to avoid 2MB Next.js cache limit warning)
+    const text = await memCache(
+      "international-results-csv",
+      async () => {
+        const res = await fetch('https://raw.githubusercontent.com/martj42/international_results/master/results.csv', {
+          cache: "no-store"
+        });
+        if (!res.ok) throw new Error("Failed to fetch match data");
+        return res.text();
+      },
+      3600_000
+    );
     const lines = text.split('\n');
 
     const form = [];

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "@/app/api/teams/[teamId]/sentiment/route";
 import { prisma } from "@/lib/db";
 import { getTeamNews } from "@/lib/news-api";
+import { clearMemCache } from "@/lib/mem-cache";
 
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -18,6 +19,7 @@ vi.mock("@/lib/news-api", () => ({
 describe("sentiment API route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearMemCache();
   });
 
   it("should calculate positive sentiment correctly when headlines are positive", async () => {

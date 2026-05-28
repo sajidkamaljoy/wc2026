@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTeamNews } from "@/lib/news-api";
 import Sentiment from "sentiment";
+import { memCache } from "@/lib/mem-cache";
 
 export async function GET(
   request: Request,
@@ -40,20 +41,24 @@ export async function GET(
       });
     }
 
-    let headlines: {
-      title: string;
-      url: string;
-      source: string;
-      publishedAt: string;
-      sentiment: number;
-    }[] = [];
-    let averageScore = 0;
-    let analyzedWithGemini = false;
+    // 3. Use in-memory cache (1 hour TTL) to avoid hammering Gemini API on every page load
+    const sentimentResult = await memCache(
+      `sentiment-${teamId}`,
+      async () => {
+        let headlines: {
+          title: string;
+          url: string;
+          source: string;
+          publishedAt: string;
+          sentiment: number;
+        }[] = [];
+        let averageScore = 0;
+        let analyzedWithGemini = false;
 
-    // 3. Try to use Gemini API for advanced, context-aware sentiment analysis
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        const prompt = `You are a sports sentiment analyzer. Analyze the public fan mood and media sentiment for the soccer team "${teamName}" based on these ${articles.length} news headlines.
+        // Try Gemini API for advanced, context-aware sentiment analysis
+        if (process.env.GEMINI_API_KEY) {
+          try {
+            const prompt = `You are a sports sentiment analyzer. Analyze the public fan mood and media sentiment for the soccer team "${teamName}" based on these ${articles.length} news headlines.
 For each headline, assign a sentiment score between -5.0 (extremely negative/disastrous) and +5.0 (extremely positive/glorious). A score of 0.0 is completely neutral.
 Also calculate the overall average sentiment score for the team.
 
@@ -72,83 +77,96 @@ Input Headlines:
 ${articles.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}
 `;
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
+            const geminiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  contents: [
                     {
-                      text: prompt,
+                      parts: [
+                        {
+                          text: prompt,
+                        },
+                      ],
                     },
                   ],
-                },
-              ],
-              generationConfig: {
-                responseMimeType: "application/json",
-              },
-            }),
+                  generationConfig: {
+                    responseMimeType: "application/json",
+                  },
+                }),
+                cache: "no-store",
+              }
+            );
+
+            if (!geminiRes.ok) {
+              throw new Error(`Gemini API returned status ${geminiRes.status}`);
+            }
+
+            const geminiData = await geminiRes.json();
+            const textResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!textResponse) {
+              throw new Error("Invalid response structure from Gemini API");
+            }
+
+            const parsed = JSON.parse(textResponse);
+            
+            headlines = articles.map((article) => {
+              const parsedItem = parsed.headlines?.find(
+                (h: any) => h.title?.toLowerCase() === article.title?.toLowerCase()
+              );
+              const sentimentScore = parsedItem ? parsedItem.score : 0;
+              return {
+                title: article.title,
+                url: article.url,
+                source: article.source,
+                publishedAt: article.publishedAt,
+                sentiment: Math.round(sentimentScore * 100) / 100
+              };
+            });
+
+            averageScore = parsed.averageScore ?? (headlines.reduce((acc, h) => acc + h.sentiment, 0) / headlines.length);
+            analyzedWithGemini = true;
+          } catch (geminiError: any) {
+            const isRateLimit = geminiError.message?.includes("status 429") || geminiError.message?.includes("Rate Limit");
+            if (isRateLimit) {
+              console.warn("⚠️ [Gemini API] Rate limit reached (429) or quota exceeded. Falling back gracefully to local lexicon analysis.");
+            } else {
+              console.warn("⚠️ [Gemini API] Sentiment analysis failed, falling back to local library:", geminiError.message || geminiError);
+            }
           }
-        );
-
-        if (!geminiRes.ok) {
-          throw new Error(`Gemini API returned status ${geminiRes.status}`);
         }
 
-        const geminiData = await geminiRes.json();
-        const textResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!textResponse) {
-          throw new Error("Invalid response structure from Gemini API");
+        // Fallback to local lexicon sentiment analyzer if Gemini is not configured or failed
+        if (!analyzedWithGemini) {
+          const sentimentAnalyzer = new Sentiment();
+          let totalScore = 0;
+
+          headlines = articles.map((article) => {
+            const result = sentimentAnalyzer.analyze(article.title);
+            totalScore += result.score;
+
+            return {
+              title: article.title,
+              url: article.url,
+              source: article.source,
+              publishedAt: article.publishedAt,
+              sentiment: result.score
+            };
+          });
+
+          averageScore = totalScore / articles.length;
         }
 
-        const parsed = JSON.parse(textResponse);
-        
-        headlines = articles.map((article) => {
-          const parsedItem = parsed.headlines?.find(
-            (h: any) => h.title?.toLowerCase() === article.title?.toLowerCase()
-          );
-          const sentimentScore = parsedItem ? parsedItem.score : 0;
-          return {
-            title: article.title,
-            url: article.url,
-            source: article.source,
-            publishedAt: article.publishedAt,
-            sentiment: Math.round(sentimentScore * 100) / 100
-          };
-        });
+        return { headlines, averageScore };
+      },
+      3600_000 // Cache for 1 hour
+    );
 
-        averageScore = parsed.averageScore ?? (headlines.reduce((acc, h) => acc + h.sentiment, 0) / headlines.length);
-        analyzedWithGemini = true;
-      } catch (geminiError) {
-        console.error("Gemini sentiment analysis failed, falling back to local library:", geminiError);
-      }
-    }
-
-    // 4. Fallback to local lexicon sentiment analyzer if Gemini is not configured or failed
-    if (!analyzedWithGemini) {
-      const sentimentAnalyzer = new Sentiment();
-      let totalScore = 0;
-
-      headlines = articles.map((article) => {
-        const result = sentimentAnalyzer.analyze(article.title);
-        totalScore += result.score;
-
-        return {
-          title: article.title,
-          url: article.url,
-          source: article.source,
-          publishedAt: article.publishedAt,
-          sentiment: result.score
-        };
-      });
-
-      averageScore = totalScore / articles.length;
-    }
+    const { headlines, averageScore } = sentimentResult;
 
     // 5. Map average score to labels, emojis, and colors
     let label = "Neutral";
