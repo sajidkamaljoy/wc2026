@@ -100,10 +100,10 @@ describe("sentiment API route", () => {
     expect(json.label).toBe("Neutral");
   });
 
-  it("should calculate positive sentiment using Hugging Face API when key is configured", async () => {
+  it("should calculate positive sentiment using Groq API when key is configured", async () => {
     // 1. Mock env key
-    const originalApiKey = process.env.HUGGINGFACE_API_KEY;
-    process.env.HUGGINGFACE_API_KEY = "test-hf-key";
+    const originalApiKey = process.env.GROQ_API_KEY;
+    process.env.GROQ_API_KEY = "test-groq-key";
 
     // 2. Mock DB call
     vi.mocked(prisma.team.findUnique).mockResolvedValue({ name: "Argentina" } as any);
@@ -124,24 +124,21 @@ describe("sentiment API route", () => {
       },
     ]);
 
-    // 4. Mock global fetch for Hugging Face API
-    const mockHFResponse = [
-      [
-        { label: "positive", score: 0.95 },
-        { label: "neutral", score: 0.04 },
-        { label: "negative", score: 0.01 }
-      ],
-      [
-        { label: "positive", score: 0.8 },
-        { label: "neutral", score: 0.18 },
-        { label: "negative", score: 0.02 }
+    // 4. Mock global fetch for Groq API
+    const mockGroqResponse = {
+      choices: [
+        {
+          message: {
+            content: '[{"score": 4.5}, {"score": 3.5}]'
+          }
+        }
       ]
-    ];
+    };
 
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => mockHFResponse,
+      json: async () => mockGroqResponse,
     } as any);
 
     try {
@@ -154,26 +151,26 @@ describe("sentiment API route", () => {
       expect(response.status).toBe(200);
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("https://router.huggingface.co/hf-inference/models"),
+        expect.stringContaining("https://api.groq.com/openai/v1/chat/completions"),
         expect.any(Object)
       );
-      // Average score should be: ((0.95 - 0.01) * 5 + (0.8 - 0.02) * 5) / 2 = (4.7 + 3.9) / 2 = 4.3
-      expect(json.score).toBe(4.3);
+      // Average score should be: (4.5 + 3.5) / 2 = 4.0
+      expect(json.score).toBe(4.0);
       expect(json.label).toBe("Very Positive");
       expect(json.emoji).toBe("😍");
-      expect(json.headlines[0].sentiment).toBe(4.7);
-      expect(json.headlines[1].sentiment).toBe(3.9);
+      expect(json.headlines[0].sentiment).toBe(4.5);
+      expect(json.headlines[1].sentiment).toBe(3.5);
     } finally {
       // Cleanup env and global fetch
-      process.env.HUGGINGFACE_API_KEY = originalApiKey;
+      process.env.GROQ_API_KEY = originalApiKey;
       global.fetch = originalFetch;
     }
   });
 
-  it("should fallback to local sentiment library if Hugging Face API call fails", async () => {
+  it("should fallback to local sentiment library if Groq API call fails", async () => {
     // 1. Mock env key
-    const originalApiKey = process.env.HUGGINGFACE_API_KEY;
-    process.env.HUGGINGFACE_API_KEY = "test-hf-key";
+    const originalApiKey = process.env.GROQ_API_KEY;
+    process.env.GROQ_API_KEY = "test-groq-key";
 
     // 2. Mock DB call
     vi.mocked(prisma.team.findUnique).mockResolvedValue({ name: "Argentina" } as any);
@@ -190,7 +187,7 @@ describe("sentiment API route", () => {
 
     // 4. Mock global fetch to fail (throws error)
     const originalFetch = global.fetch;
-    global.fetch = vi.fn().mockRejectedValue(new Error("Hugging Face API Rate Limit Exceeded"));
+    global.fetch = vi.fn().mockRejectedValue(new Error("Groq API Rate Limit Exceeded 429"));
 
     try {
       const request = new Request("http://localhost/api/teams/arg/sentiment");
@@ -207,7 +204,7 @@ describe("sentiment API route", () => {
       expect(json.headlines[0].sentiment).toBeGreaterThan(0);
     } finally {
       // Cleanup env and global fetch
-      process.env.HUGGINGFACE_API_KEY = originalApiKey;
+      process.env.GROQ_API_KEY = originalApiKey;
       global.fetch = originalFetch;
     }
   });

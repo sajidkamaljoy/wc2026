@@ -41,7 +41,7 @@ export async function GET(
       });
     }
 
-    // 3. Use in-memory cache (1 hour TTL) to avoid hammering Hugging Face API on every page load
+    // 3. Use in-memory cache (2 hours TTL) to avoid hammering Groq API on every page load
     const sentimentResult = await memCache(
       `sentiment-${teamId}`,
       async () => {
@@ -53,174 +53,141 @@ export async function GET(
           sentiment: number;
         }[] = [];
         let averageScore = 0;
-        let analyzedWithHF = false;
+        let analyzedWithGroq = false;
 
-        // Try Hugging Face Inference API for advanced, transformer-based sentiment analysis
-        if (process.env.HUGGINGFACE_API_KEY) {
+        // Try Groq API for advanced, transformer-based sentiment analysis
+        if (process.env.GROQ_API_KEY) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-            const hfRes = await fetch(
-              "https://router.huggingface.co/hf-inference/models/cardiffnlp/twitter-roberta-base-sentiment-latest",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-                },
-                body: JSON.stringify({ inputs: articles.map((a) => a.title) }),
-                signal: controller.signal,
-                cache: "no-store",
-              }
-            );
+            const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                max_tokens: 500,
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are a football sentiment analyzer for the FIFA World Cup 2026.
+Given a list of English news headlines about a national football team, return a JSON array
+of sentiment scores from -5.0 (very negative) to +5.0 (very positive) for each headline.
+
+Football-specific rules:
+- Goals, wins, qualification, clean sheets, hat-tricks = positive
+- Injuries, red cards, VAR controversy, elimination, manager sacked = negative
+- "upset" means underdog won = context-dependent
+- Draws = slightly negative for favourites, positive for underdogs
+- Penalty shootout loss = very negative (-4 to -5)
+
+Return ONLY valid JSON with no preamble:
+[{"score": 2.5}, {"score": -3.0}, ...]`
+                  },
+                  {
+                    role: "user",
+                    content: articles.map((a, i) => `${i + 1}. ${a.title}`).join("\n")
+                  }
+                ]
+              }),
+              signal: controller.signal,
+            });
             clearTimeout(timeoutId);
 
-            if (!hfRes.ok) {
-              throw new Error(`Hugging Face API returned status ${hfRes.status}`);
+            if (!groqRes.ok) {
+              throw new Error(`Groq API returned status ${groqRes.status}`);
             }
 
-            const hfData = await hfRes.json();
-            
-            if (!Array.isArray(hfData)) {
-              throw new Error("Invalid response structure from Hugging Face API");
-            }
+            const groqData = await groqRes.json();
+            const content = groqData.choices?.[0]?.message?.content || "[]";
+            const scores = JSON.parse(content.replace(/```json|```/g, "").trim());
 
-            headlines = articles.map((article, idx) => {
-              const predictions = hfData[idx];
-              let sentimentScore = 0;
-
-              if (Array.isArray(predictions)) {
-                let positiveProb = 0;
-                let negativeProb = 0;
-
-                for (const pred of predictions) {
-                  const label = pred.label?.toLowerCase() || "";
-                  const score = pred.score || 0;
-                  if (label === "positive" || label === "label_2" || label === "pos" || label.includes("positive")) {
-                    positiveProb = score;
-                  } else if (label === "negative" || label === "label_0" || label === "neg" || label.includes("negative")) {
-                    negativeProb = score;
-                  }
-                }
-                sentimentScore = (positiveProb * 5.0) - (negativeProb * 5.0);
-              }
-
-              return {
-                title: article.title,
-                url: article.url,
-                source: article.source,
-                publishedAt: article.publishedAt,
-                sentiment: Math.round(sentimentScore * 100) / 100
-              };
-            });
+            headlines = articles.map((article, idx) => ({
+              title: article.title,
+              url: article.url,
+              source: article.source,
+              publishedAt: article.publishedAt,
+              sentiment: scores[idx]?.score ?? 0
+            }));
 
             averageScore = headlines.reduce((acc, h) => acc + h.sentiment, 0) / headlines.length;
-            analyzedWithHF = true;
-          } catch (hfError: any) {
-            const isTimeout = hfError.name === "AbortError";
+            analyzedWithGroq = true;
+          } catch (groqError: unknown) {
+            const err = groqError as { name?: string; message?: string };
+            const isTimeout = err.name === "AbortError";
+            const isRateLimit = err.message?.includes("429") || String(err).includes("429");
+
             if (isTimeout) {
-              console.warn("⚠️ [Hugging Face API] Request timed out (30s). Falling back gracefully to local lexicon analysis.");
+              console.warn("⚠️ [Groq] Timed out — falling back to local lexicon");
+            } else if (isRateLimit) {
+              console.warn("⚠️ [Groq] Rate limit hit — falling back to local lexicon");
             } else {
-              console.warn("⚠️ [Hugging Face API] Sentiment analysis failed, falling back to local library:", hfError.message || hfError);
+              console.warn("⚠️ [Groq] Failed:", err.message || err);
             }
+            // analyzedWithGroq stays false → lexicon fallback runs
           }
         }
 
-        // Fallback to local lexicon sentiment analyzer if Hugging Face is not configured or failed
-        if (!analyzedWithHF) {
+        // Fallback to local lexicon sentiment analyzer if Groq is not configured or failed
+        if (!analyzedWithGroq) {
           const sentimentAnalyzer = new Sentiment();
           const customLexicon = {
-            // Positive sports words
-            "masterclass": 4,
-            "superb": 4,
-            "outstanding": 4,
-            "brilliant": 4,
-            "glorious": 4,
-            "triumph": 4,
-            "triumphant": 4,
-            "champion": 4,
-            "win": 3,
-            "wins": 3,
-            "winning": 3,
-            "won": 3,
-            "unbeaten": 3,
-            "undefeated": 3,
-            "qualify": 3,
-            "qualifies": 3,
-            "qualified": 3,
-            "dominate": 3,
-            "dominating": 3,
-            "dominated": 3,
-            "impressive": 3,
-            "star": 3,
-            "hero": 3,
-            "genius": 3,
-            "confident": 2,
-            "draw": 1,
-            "draws": 1,
-            "tie": 1,
-            
-            // Negative sports words
-            "defeat": -3,
-            "defeated": -3,
-            "defeats": -3,
-            "lose": -3,
-            "loses": -3,
-            "lost": -3,
-            "loss": -3,
-            "fail": -3,
-            "fails": -3,
-            "failed": -3,
-            "failure": -3,
-            "struggle": -2,
-            "struggling": -2,
-            "poor": -3,
-            "weak": -3,
-            "injured": -2,
-            "injury": -2,
-            "injuries": -2,
-            "disaster": -4,
-            "disastrous": -4,
-            "devastated": -4,
-            "eliminated": -4,
-            "sacked": -4,
-            "fired": -4,
-            "crash": -4,
-            "crashed": -4,
-            "awful": -4,
-            "terrible": -4,
+            // Strongly Positive
+            "champion":      4,  "champions":     4,
+            "trophy":        4,  "glory":         4,
+            "masterclass":   4,  "brilliant":     4,
+            "hat-trick":     4,  "hat trick":     4,
+            "triumph":       4,  "triumphant":    4,
+            "superb":        4,  "outstanding":   4,
+            "glorious":      4,
 
-            // Football-specific terms
-            "knockout":    -3,
-            "relegated":   -4,
-            "suspended":   -2,
-            "banned":      -3,
-            "controversy": -2,
-            "VAR":          0,  // neutral by itself
-            "penalty":      0,  // neutral by itself
-            "red card":    -2,
-            "own goal":    -2,
-            "comeback":     3,
-            "clean sheet":  3,
-            "hat trick":    4,
-            "hat-trick":    4,
-            "quarterfinal": 1,
-            "semifinal":    2,
-            "final":        2,
-            "trophy":       4,
-            "title":        2,
-            "glory":        4,
-            "heartbreak":  -3,
-            "stunner":      3,
-            "upset":       -2,  // "upset" in sports = underdog win, often negative for favourite
-            "crisis":      -3,
-            "row":         -2,  // e.g. "contract row"
-            "blow":        -3,  // e.g. "injury blow"
-            "boost":        3,
-            "hope":         2,
-            "fear":        -2,
-            "doubt":       -1,
+            // Positive
+            "win":           3,  "wins":          3,
+            "won":           3,  "winning":       3,
+            "qualify":       3,  "qualified":     3,
+            "dominate":      3,  "dominated":     3,
+            "unbeaten":      3,  "undefeated":    3,
+            "clean sheet":   3,  "comeback":      3,
+            "impressive":    3,  "hero":          3,
+            "star":          3,  "genius":        3,
+            "boost":         3,  "advance":       3,
+
+            // Slightly Positive
+            "semifinal":     2,  "final":         2,
+            "hope":          2,  "title":         2,
+            "confident":     2,  "quarterfinal":  1,
+            "draw":          1,  "draws":         1,
+            "tie":           1,
+
+            // Slightly Negative
+            "doubt":        -1,  "fear":         -2,
+            "struggle":     -2,  "struggling":   -2,
+            "injured":      -2,  "injury":       -2,
+            "injuries":     -2,  "suspended":    -2,
+            "own goal":     -2,  "VAR":          -2,
+            "controversy":  -2,  "row":          -2,
+            "upset":        -2,  "weak":         -2,
+
+            // Strongly Negative
+            "defeat":       -3,  "defeated":     -3,
+            "lose":         -3,  "lost":         -3,
+            "loss":         -3,  "fail":         -3,
+            "failed":       -3,  "failure":      -3,
+            "poor":         -3,  "blow":         -3,
+            "crisis":       -3,  "red card":     -3,
+            "knockout":     -3,
+
+            // Very Negative
+            "eliminated":   -4,  "sacked":       -4,
+            "fired":        -4,  "disaster":     -4,
+            "disastrous":   -4,  "devastated":   -4,
+            "crash":        -4,  "crashed":      -4,
+            "awful":        -4,  "terrible":     -4,
+            "heartbreak":   -4,  "relegated":    -4,
+            "banned":       -4,
           };
 
           let totalScore = 0;
@@ -246,7 +213,7 @@ export async function GET(
 
         return { headlines, averageScore };
       },
-      3600_000 // Cache for 1 hour
+      7200_000 // Cache for 2 hours (7200000 ms)
     );
 
     const { headlines, averageScore } = sentimentResult;
