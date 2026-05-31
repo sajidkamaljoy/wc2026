@@ -83,7 +83,7 @@ export default async function SharePage({ searchParams }: Props) {
   } catch {
     console.error("⚠️ [Prisma] Could not fetch groups for share page, loading local fallback.");
     // Inline groups fallback to ensure the page works completely offline
-    const { getFallbackGroups } = await import("@/lib/fallback-data");
+    const { getFallbackGroups } = await import("../../../lib/fallback-data");
     groups = getFallbackGroups().map((g) => ({
       id: g.id,
       name: g.name,

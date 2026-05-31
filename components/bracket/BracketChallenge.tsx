@@ -10,7 +10,6 @@ import {
   ChevronUp,
   ChevronDown,
   LayoutGrid,
-  Sparkles,
   Trophy,
   CheckCircle,
   AlertCircle,
@@ -30,14 +29,11 @@ export function BracketChallenge() {
     toggleThirdPlace,
     pickWinner,
     resetBracket,
-    submitBracket,
     isGroupsCompleted,
     isThirdPlacesCompleted,
     knockoutMatchesCount,
     totalKnockoutMatches,
     isBracketComplete,
-    submitting,
-    isSubmitted,
   } = useBracketPrediction();
 
   const [activeTab, setActiveTab] = useState<"groups" | "wildcard" | "bracket" | "leaderboard">("groups");
@@ -111,32 +107,6 @@ export function BracketChallenge() {
             className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer grow text-center animate-fade-in"
           >
             Reset All
-          </button>
-          
-          <button
-            onClick={submitBracket}
-            disabled={!isBracketComplete || submitting || isSubmitted}
-            className={`px-6 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all shrink-0 grow ${
-              isSubmitted
-                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-default"
-                : isBracketComplete
-                ? "bg-gradient-to-r from-amber-500 to-yellow-400 hover:scale-[1.02] active:scale-[0.98] text-slate-950 cursor-pointer shadow-lg shadow-amber-500/20"
-                : "bg-slate-800 text-slate-500 border border-white/5 cursor-not-allowed"
-            }`}
-          >
-            {isSubmitted ? (
-              <>
-                <CheckCircle className="h-4 w-4" />
-                Submitted!
-              </>
-            ) : submitting ? (
-              <div className="h-4 w-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Submit Bracket
-              </>
-            )}
           </button>
 
           {isBracketComplete && (
