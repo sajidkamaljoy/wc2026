@@ -52,7 +52,7 @@ export function BracketLeaderboard() {
       <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto">
         {items.length === 0 ? (
           <div className="p-8 text-center text-slate-500 italic flex flex-col gap-2">
-            <span>No bracket challenge scores logged yet.</span>
+            <span>No bracket predictor scores logged yet.</span>
             <span className="text-xs text-slate-600">Leaderboard scores calculate after matches finish!</span>
           </div>
         ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { allocateThirdPlaces } from "@/lib/bracket-prediction";
+import { allocateThirdPlaces, encodePredictionState } from "@/lib/bracket-prediction";
 import { BracketMatchCard } from "./BracketMatchCard";
 import {
   Trophy,
@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Share2,
   Copy,
+  Image,
 } from "lucide-react";
 
 interface Team {
@@ -38,6 +39,10 @@ export function SharedBracketView({ prediction, groups }: Props) {
   const [copied, setCopied] = useState(false);
 
   const { groupRankings, thirdPlaces, knockoutPicks } = prediction;
+
+  const predictionCode = useMemo(() => {
+    return encodePredictionState(prediction);
+  }, [prediction]);
 
   // Helper to map team ID to full Team details
   const teamsMap = useMemo(() => {
@@ -159,13 +164,25 @@ export function SharedBracketView({ prediction, groups }: Props) {
             You are viewing a custom bracket prediction for the FIFA World Cup 2026™.{championTeam ? ` They picked **${championTeam.name}** to lift the trophy!` : ""}
           </p>
         </div>
-        <button
-          onClick={copyLink}
-          className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 font-bold text-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap shadow-md shadow-amber-500/20 flex items-center gap-2"
-        >
-          {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          {copied ? "Link Copied!" : "Copy Share Link"}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+          <button
+            onClick={copyLink}
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 font-bold text-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 grow sm:grow-0"
+          >
+            {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? "Link Copied!" : "Copy Share Link"}
+          </button>
+
+          <a
+            href={`/api/predict/bracket/og?p=${predictionCode}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 rounded-xl border border-white/10 bg-slate-950 font-bold text-slate-200 hover:bg-slate-900 hover:text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap shadow-md flex items-center justify-center gap-2 grow sm:grow-0"
+          >
+            <Image className="h-4 w-4 text-amber-400" />
+            Download Card
+          </a>
+        </div>
       </div>
 
       {/* Tabs */}

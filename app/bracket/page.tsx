@@ -43,22 +43,22 @@ export default async function BracketPage() {
         </p>
       </div>
 
-      {/* Premium Bracket Challenge CTA Banner */}
+      {/* Premium Bracket Predictor CTA Banner */}
       <div className="w-full bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6 shadow-lg shadow-amber-500/5 backdrop-blur-md">
         <div className="flex flex-col gap-2 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-amber-400 font-bold text-lg uppercase tracking-wider">
             <Sparkles className="h-5 w-5 animate-pulse" />
-            Bracket Challenge is Live!
+            Bracket Predictor is Live!
           </div>
           <p className="text-sm text-slate-300 max-w-xl">
-            Rank groups, choose wildcard 3rd-place teams, and predict every knockout winner. Submit your bracket and compete on the global leaderboard!
+            Rank groups, choose wildcard 3rd-place teams, and predict every knockout winner. Get your shareable link to show off your bracket!
           </p>
         </div>
         <Link
           href="/bracket/predict"
           className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 font-bold text-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap shadow-md shadow-amber-500/20"
         >
-          Play Bracket Challenge →
+          Play Bracket Predictor →
         </Link>
       </div>
 

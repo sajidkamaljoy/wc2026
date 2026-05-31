@@ -6,11 +6,6 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Shared Tournament Prediction",
-  description: "View this custom 2026 World Cup bracket prediction challenge entry.",
-};
-
 interface SearchParams {
   p?: string;
   user?: string;
@@ -18,6 +13,36 @@ interface SearchParams {
 
 interface Props {
   searchParams: Promise<SearchParams>;
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { p } = await searchParams;
+  const ogUrl = p 
+    ? `/api/predict/bracket/og?p=${encodeURIComponent(p)}` 
+    : `/api/predict/bracket/og`;
+
+  return {
+    title: "Shared Prediction | Bracket Predictor",
+    description: "View this custom 2026 World Cup bracket prediction.",
+    openGraph: {
+      title: "Shared Prediction | Bracket Predictor",
+      description: "View this custom 2026 World Cup bracket prediction.",
+      images: [
+        {
+          url: ogUrl,
+          width: 1200,
+          height: 630,
+          alt: "Bracket Predictor Prediction",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Shared Prediction | Bracket Predictor",
+      description: "View this custom 2026 World Cup bracket prediction.",
+      images: [ogUrl],
+    },
+  };
 }
 
 export default async function SharePage({ searchParams }: Props) {
@@ -102,7 +127,7 @@ export default async function SharePage({ searchParams }: Props) {
           Tournament Predictions
         </h1>
         <p className="text-sm md:text-base text-slate-400 font-medium max-w-2xl">
-          Fan companion bracket challenge predictions.
+          Fan companion bracket predictor predictions.
         </p>
       </div>
 

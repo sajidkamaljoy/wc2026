@@ -15,6 +15,7 @@ import {
   AlertCircle,
   HelpCircle,
   Share2,
+  Image,
 } from "lucide-react";
 
 export function BracketChallenge() {
@@ -39,12 +40,16 @@ export function BracketChallenge() {
   const [activeTab, setActiveTab] = useState<"groups" | "wildcard" | "bracket" | "leaderboard">("groups");
   const [copiedShare, setCopiedShare] = useState(false);
 
-  // Compute self-contained URL-safe encoded share link
-  const shareUrl = useMemo(() => {
-    if (typeof window === "undefined" || !isBracketComplete) return "";
-    const code = encodePredictionState({ groupRankings, thirdPlaces, knockoutPicks });
-    return `${window.location.origin}/bracket/share?p=${code}`;
+  // Compute prediction code and share URL
+  const predictionCode = useMemo(() => {
+    if (!isBracketComplete) return "";
+    return encodePredictionState({ groupRankings, thirdPlaces, knockoutPicks });
   }, [groupRankings, thirdPlaces, knockoutPicks, isBracketComplete]);
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined" || !predictionCode) return "";
+    return `${window.location.origin}/bracket/share?p=${predictionCode}`;
+  }, [predictionCode]);
 
   const handleCopyShare = () => {
     if (!shareUrl) return;
@@ -64,7 +69,7 @@ export function BracketChallenge() {
     return (
       <div className="flex flex-col items-center justify-center p-24 text-slate-400 gap-3">
         <div className="h-8 w-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-        <span className="text-base font-semibold tracking-widest animate-pulse">Initializing Challenge...</span>
+        <span className="text-base font-semibold tracking-widest animate-pulse">Initializing Predictor...</span>
       </div>
     );
   }
@@ -110,22 +115,34 @@ export function BracketChallenge() {
           </button>
 
           {isBracketComplete && (
-            <button
-              onClick={handleCopyShare}
-              className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center animate-fade-in"
-            >
-              {copiedShare ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-emerald-400" />
-                  Link Copied!
-                </>
-              ) : (
-                <>
-                  <Share2 className="h-4 w-4" />
-                  Share Prediction
-                </>
-              )}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <button
+                onClick={handleCopyShare}
+                className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center animate-fade-in"
+              >
+                {copiedShare ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-emerald-400" />
+                    Link Copied!
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-4 w-4" />
+                    Share Prediction
+                  </>
+                )}
+              </button>
+
+              <a
+                href={`/api/predict/bracket/og?p=${predictionCode}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10 bg-slate-950 text-slate-200 hover:bg-slate-900 hover:text-white hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center animate-fade-in"
+              >
+                <Image className="h-4 w-4 text-amber-400" />
+                Download Card
+              </a>
+            </div>
           )}
         </div>
       </div>
