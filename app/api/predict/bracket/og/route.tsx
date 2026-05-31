@@ -7,6 +7,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const p = searchParams.get("p");
+    const { origin } = new URL(request.url);
+    const logoUrl = `${origin}/fifa-2026-logo.svg`;
 
     let prediction = null;
     if (p) {
@@ -77,26 +79,8 @@ export async function GET(request: Request) {
             </div>
 
             <div tw="flex flex-col items-center max-w-4xl text-center gap-6">
-              {/* Trophy Icon */}
-              <div tw="flex items-center justify-center bg-amber-500/10 p-6 rounded-full border border-amber-500/30 mb-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="80"
-                  height="80"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                  <path d="M4 22h16" />
-                  <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
-                  <path d="M12 2a6 6 0 0 0-6 6v5a6 6 0 0 0 12 0V8a6 6 0 0 0-6-6z" />
-                </svg>
-              </div>
+              {/* FIFA 2026 Logo */}
+              <img src={logoUrl} alt="FIFA 2026" tw="w-32 h-48 object-contain mb-2" />
 
               <h1 tw="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent uppercase">
                 World Cup 2026™ Bracket Predictor
@@ -138,23 +122,7 @@ export async function GET(request: Request) {
           {/* Header branding */}
           <div tw="flex items-center justify-between w-full border-b border-white/10 pb-4">
             <div tw="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#fbbf24"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                <path d="M4 22h16" />
-                <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
-                <path d="M12 2a6 6 0 0 0-6 6v5a6 6 0 0 0 12 0V8a6 6 0 0 0-6-6z" />
-              </svg>
+              <img src={logoUrl} alt="FIFA 2026" tw="w-8 h-12 object-contain" />
               <span tw="text-xl font-black tracking-wider text-amber-400 uppercase">
                 World Cup 2026™ Bracket Predictor
               </span>
@@ -168,25 +136,7 @@ export async function GET(request: Request) {
           <div tw="flex flex-row justify-between items-center w-full my-auto gap-8">
             {/* Left Side: Predicted Champion Card */}
             <div tw="flex flex-col items-center justify-center flex-1 bg-slate-900/60 border border-amber-500/40 rounded-3xl p-6 text-center max-w-[480px]">
-              <div tw="flex items-center justify-center bg-amber-500/10 p-4 rounded-full border border-amber-500/30 mb-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#fbbf24"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                  <path d="M4 22h16" />
-                  <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
-                  <path d="M12 2a6 6 0 0 0-6 6v5a6 6 0 0 0 12 0V8a6 6 0 0 0-6-6z" />
-                </svg>
-              </div>
+              <img src={logoUrl} alt="FIFA 2026" tw="w-16 h-24 object-contain mb-2" />
               <span tw="text-xs uppercase font-extrabold tracking-widest text-amber-400 mb-1">
                 My Predicted Champion
               </span>
