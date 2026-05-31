@@ -79,7 +79,7 @@ export function SharedBracketView({ prediction, groups }: Props) {
 
   // Dynamically compute all downstream knockout matches
   const knockoutMatches = useMemo(() => {
-    const matches: Record<number, { home: Team | null; away: Team | null }> = { ...r32Matches };
+    const matches: Record<number, { home: Team | null; away: Team | null }> = { ...r32Matches } as any;
     const getTeam = (id?: string) => (id ? teamsMap.get(id) || null : null);
 
     // Round of 16 (89 to 96)
