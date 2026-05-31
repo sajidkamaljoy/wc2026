@@ -2,7 +2,6 @@ import { ImageResponse } from "next/og";
 import { decodePredictionState } from "../../../../../lib/bracket-prediction";
 import { FALLBACK_TEAMS_RAW } from "../../../../../lib/fallback-data";
 
-export const runtime = "edge";
 
 export async function GET(request: Request) {
   try {
