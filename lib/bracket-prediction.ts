@@ -102,3 +102,70 @@ export function allocateThirdPlaces(selectedGroups: string[]): Record<number, st
 
   return assignment;
 }
+
+/**
+ * Encodes the bracket prediction state into a compact, URL-safe Base64 string.
+ * Works perfectly on both the client (window.btoa) and the server (Buffer).
+ */
+export function encodePredictionState(state: {
+  groupRankings: Record<string, string[]>;
+  thirdPlaces: string[];
+  knockoutPicks: Record<number, string>;
+}): string {
+  try {
+    const jsonStr = JSON.stringify({
+      g: state.groupRankings,
+      t: state.thirdPlaces,
+      k: state.knockoutPicks,
+    });
+    
+    if (typeof window !== "undefined") {
+      return btoa(jsonStr)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+    }
+    return Buffer.from(jsonStr)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  } catch (e) {
+    console.error("Failed to encode bracket prediction:", e);
+    return "";
+  }
+}
+
+/**
+ * Decodes a URL-safe Base64 string back into the bracket prediction state.
+ * Works perfectly on both the client (window.atob) and the server (Buffer).
+ */
+export function decodePredictionState(code: string): {
+  groupRankings: Record<string, string[]>;
+  thirdPlaces: string[];
+  knockoutPicks: Record<number, string>;
+} | null {
+  try {
+    let base64 = code.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) {
+      base64 += "=";
+    }
+    
+    let jsonStr = "";
+    if (typeof window !== "undefined") {
+      jsonStr = atob(base64);
+    } else {
+      jsonStr = Buffer.from(base64, "base64").toString("utf-8");
+    }
+    
+    const data = JSON.parse(jsonStr);
+    return {
+      groupRankings: data.g,
+      thirdPlaces: data.t,
+      knockoutPicks: data.k,
+    };
+  } catch (e) {
+    console.error("Failed to decode bracket prediction:", e);
+    return null;
+  }
+}

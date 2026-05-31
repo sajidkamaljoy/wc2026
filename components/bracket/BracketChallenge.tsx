@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useBracketPrediction } from "@/hooks/useBracketPrediction";
 import { BracketProgressBar } from "./BracketProgressBar";
 import { BracketMatchCard } from "./BracketMatchCard";
 import { BracketLeaderboard } from "./BracketLeaderboard";
+import { encodePredictionState } from "@/lib/bracket-prediction";
 import {
   ChevronUp,
   ChevronDown,
@@ -14,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle,
   HelpCircle,
+  Share2,
 } from "lucide-react";
 
 export function BracketChallenge() {
@@ -39,6 +41,21 @@ export function BracketChallenge() {
   } = useBracketPrediction();
 
   const [activeTab, setActiveTab] = useState<"groups" | "wildcard" | "bracket" | "leaderboard">("groups");
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  // Compute self-contained URL-safe encoded share link
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined" || !isBracketComplete) return "";
+    const code = encodePredictionState({ groupRankings, thirdPlaces, knockoutPicks });
+    return `${window.location.origin}/bracket/share?p=${code}`;
+  }, [groupRankings, thirdPlaces, knockoutPicks, isBracketComplete]);
+
+  const handleCopyShare = () => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2000);
+  };
 
   // Calculate overall percentage
   const totalSteps = 12 + 8 + totalKnockoutMatches; // 12 groups ranked + 8 thirds selected + 32 matches predicted = 52 steps
@@ -91,7 +108,7 @@ export function BracketChallenge() {
         <div className="flex flex-row md:flex-col gap-3 justify-end items-center md:items-stretch">
           <button
             onClick={resetBracket}
-            className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer grow text-center"
+            className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer grow text-center animate-fade-in"
           >
             Reset All
           </button>
@@ -121,6 +138,25 @@ export function BracketChallenge() {
               </>
             )}
           </button>
+
+          {isBracketComplete && (
+            <button
+              onClick={handleCopyShare}
+              className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center animate-fade-in"
+            >
+              {copiedShare ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  Link Copied!
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4" />
+                  Share Prediction
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -137,7 +173,7 @@ export function BracketChallenge() {
           return (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as "groups" | "wildcard" | "bracket" | "leaderboard")}
               className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 isActive
                   ? "border-amber-400 text-amber-400"
