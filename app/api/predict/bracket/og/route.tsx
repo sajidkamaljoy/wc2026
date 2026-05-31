@@ -291,7 +291,7 @@ export async function GET(request: Request) {
           {/* Footer App branding */}
           <div tw="flex flex-row justify-between items-center w-full border-t border-white/5 pt-4 text-slate-500 text-xs font-semibold">
             <span>Crown your champion. Play the Bracket Predictor now!</span>
-            <span>wc2026.vercel.app/bracket</span>
+            <span>fifawc2026.me/bracket/predict</span>
           </div>
         </div>
       ),
