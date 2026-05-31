@@ -95,3 +95,24 @@ export interface SquadResponse {
   squadStatus: SquadStatusType;
   players: Player[];
 }
+
+export interface GroupPickState {
+  // groupId -> ordered array of teamIds (index 0 is 1st, 1 is 2nd, 2 is 3rd, 3 is 4th)
+  groupRankings: Record<string, string[]>;
+  // array of exactly 8 groupIds whose 3rd-place team is selected to advance
+  thirdPlaces: string[];
+}
+
+export interface BracketPick {
+  matchNumber: number;
+  winnerId: string;
+  winnerName: string;
+  winnerFlagUrl: string | null;
+}
+
+export interface BracketPredictionState {
+  groupRankings: Record<string, string[]>; // groupId -> teamId[]
+  thirdPlaces: string[]; // groupId[] (the 8 chosen groups for 3rd place advancement)
+  knockoutPicks: Record<number, string>; // matchNumber -> winnerId
+  isSubmitted: boolean;
+}

@@ -17,33 +17,38 @@ export const metadata: Metadata = {
 // Server-side cache: revalidates every 60 seconds
 const fetchGroups = unstable_cache(
   async (): Promise<GroupWithStandings[]> => {
-    const groups = await prisma.group.findMany({
-      include: {
-        teams: {
-          orderBy: [{ points: "desc" }, { goalsFor: "desc" }],
+    try {
+      const groups = await prisma.group.findMany({
+        include: {
+          teams: {
+            orderBy: [{ points: "desc" }, { goalsFor: "desc" }],
+          },
         },
-      },
-      orderBy: { id: "asc" },
-    });
+        orderBy: { id: "asc" },
+      });
 
-    return groups.map((g) => ({
-      id: g.id,
-      name: g.name,
-      teams: g.teams.map((t) => ({
-        id: t.id,
-        name: t.name,
-        flagUrl: t.flagUrl,
-        played: t.played,
-        won: t.won,
-        drawn: t.drawn,
-        lost: t.lost,
-        goalsFor: t.goalsFor,
-        goalsAgainst: t.goalsAgainst,
-        goalDiff: t.goalsFor - t.goalsAgainst,
-        points: t.points,
-        groupId: t.groupId,
-      })),
-    }));
+      return groups.map((g) => ({
+        id: g.id,
+        name: g.name,
+        teams: g.teams.map((t) => ({
+          id: t.id,
+          name: t.name,
+          flagUrl: t.flagUrl,
+          played: t.played,
+          won: t.won,
+          drawn: t.drawn,
+          lost: t.lost,
+          goalsFor: t.goalsFor,
+          goalsAgainst: t.goalsAgainst,
+          goalDiff: t.goalsFor - t.goalsAgainst,
+          points: t.points,
+          groupId: t.groupId,
+        })),
+      }));
+    } catch (error) {
+      console.error("⚠️ [Prisma] Could not load groups standings. Database is unreachable. Falling back to empty standings.", error);
+      return [];
+    }
   },
   ["groups-page"],
   { revalidate: 60, tags: ["groups"] }

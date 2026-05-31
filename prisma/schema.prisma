@@ -140,7 +140,20 @@ model User {
   nickname  String?      
   points    Int          @default(0)
   predictions Prediction[]
+  bracketPrediction BracketPrediction?
   createdAt DateTime     @default(now())
+}
+
+model BracketPrediction {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  groupPicks    Json     // Record<groupId, teamId[]> (1st, 2nd, 3rd, 4th ranked teams)
+  thirdPlaces   Json     // teamId[] (the 8 chosen 3rd-place teams that advance)
+  knockoutPicks Json     // Record<matchNumber, winnerTeamId> (picks for matches 73 to 104)
+  score         Int      @default(0)
+  submittedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Prediction {
