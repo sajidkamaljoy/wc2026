@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BracketPage() {
-  let matches = [];
+  let matches: any[] = [];
   try {
     matches = await prisma.match.findMany({
       where: {
