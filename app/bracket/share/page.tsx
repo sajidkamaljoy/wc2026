@@ -21,12 +21,20 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     ? `/api/predict/bracket/og?p=${encodeURIComponent(p)}` 
     : `/api/predict/bracket/og`;
 
+  const canonicalUrl = p
+    ? `/bracket/share?p=${encodeURIComponent(p)}`
+    : `/bracket/share`;
+
   return {
     title: "Shared Prediction | Bracket Predictor",
     description: "View this custom 2026 World Cup bracket prediction.",
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: "Shared Prediction | Bracket Predictor",
       description: "View this custom 2026 World Cup bracket prediction.",
+      url: canonicalUrl,
       images: [
         {
           url: ogUrl,

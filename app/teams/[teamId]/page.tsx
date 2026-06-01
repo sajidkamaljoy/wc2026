@@ -19,6 +19,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const { teamId } = await params;
+    const lowerTeamId = teamId.toLowerCase();
     const team = await prisma.team.findUnique({
       where: { id: teamId.toUpperCase() },
       select: { name: true },
@@ -33,6 +34,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: `${team.name} Squad & Knockout Pathway`,
       description: `View official squad roster lists, positions, and track potential knockout stage opponents for ${team.name} in the FIFA World Cup 2026.`,
+      alternates: {
+        canonical: `/teams/${lowerTeamId}`,
+      },
+      openGraph: {
+        url: `/teams/${lowerTeamId}`,
+      },
     };
   } catch {
     return {

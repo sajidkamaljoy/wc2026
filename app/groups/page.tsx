@@ -12,6 +12,12 @@ export const metadata: Metadata = {
   title: "Group Standings",
   description:
     "Track live group standings for all 48 national teams across Groups A to L. Visual indicators for qualification and best third-place slots.",
+  alternates: {
+    canonical: "/groups",
+  },
+  openGraph: {
+    url: "/groups",
+  },
 };
 
 // Server-side cache: revalidates every 60 seconds
