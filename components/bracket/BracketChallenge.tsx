@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useBracketPrediction } from "@/hooks/useBracketPrediction";
 import { BracketProgressBar } from "./BracketProgressBar";
 import { BracketMatchCard } from "./BracketMatchCard";
@@ -39,6 +39,20 @@ export function BracketChallenge() {
 
   const [activeTab, setActiveTab] = useState<"groups" | "wildcard" | "bracket" | "leaderboard">("groups");
   const [copiedShare, setCopiedShare] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  // Sync theme state with HTML class list
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setTheme(isDark ? "dark" : "light");
+    };
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   // Compute prediction code and share URL
   const predictionCode = useMemo(() => {
@@ -48,8 +62,8 @@ export function BracketChallenge() {
 
   const shareUrl = useMemo(() => {
     if (typeof window === "undefined" || !predictionCode) return "";
-    return `${window.location.origin}/bracket/share?p=${predictionCode}`;
-  }, [predictionCode]);
+    return `${window.location.origin}/bracket/share?p=${predictionCode}&theme=${theme}`;
+  }, [predictionCode, theme]);
 
   const handleCopyShare = () => {
     if (!shareUrl) return;
@@ -113,37 +127,6 @@ export function BracketChallenge() {
           >
             Reset All
           </button>
-
-          {isBracketComplete && (
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <button
-                onClick={handleCopyShare}
-                className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center animate-fade-in"
-              >
-                {copiedShare ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 text-emerald-400" />
-                    Link Copied!
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="h-4 w-4" />
-                    Share Prediction
-                  </>
-                )}
-              </button>
-
-              <a
-                href={`/api/predict/bracket/og?p=${predictionCode}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10 bg-slate-950 text-slate-200 hover:bg-slate-900 hover:text-white hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center animate-fade-in"
-              >
-                <Image className="h-4 w-4 text-amber-400" />
-                Download Card
-              </a>
-            </div>
-          )}
         </div>
       </div>
 
@@ -504,16 +487,47 @@ export function BracketChallenge() {
 
                 {/* Ultimate Champion Display! */}
                 {knockoutPicks[104] && (
-                  <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 border border-amber-500/30 rounded-3xl max-w-md mx-auto text-center gap-3 shadow-2xl relative overflow-hidden animate-pulse">
-                    <Trophy className="h-16 w-16 text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
-                    <span className="text-[10px] uppercase font-extrabold tracking-widest text-amber-400">
-                      Predicted Champion
-                    </span>
-                    <span className="text-3xl font-extrabold text-white">
-                      {knockoutMatches[104]?.home?.id === knockoutPicks[104]
-                        ? knockoutMatches[104]?.home?.name
-                        : knockoutMatches[104]?.away?.name}
-                    </span>
+                  <div className="flex flex-col gap-6 items-center max-w-md mx-auto mt-8">
+                    <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 border border-amber-500/30 rounded-3xl text-center gap-3 shadow-2xl relative overflow-hidden animate-pulse w-full">
+                      <Trophy className="h-16 w-16 text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
+                      <span className="text-[10px] uppercase font-extrabold tracking-widest text-amber-400">
+                        Predicted Champion
+                      </span>
+                      <span className="text-3xl font-extrabold text-white">
+                        {knockoutMatches[104]?.home?.id === knockoutPicks[104]
+                          ? knockoutMatches[104]?.home?.name
+                          : knockoutMatches[104]?.away?.name}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
+                      <button
+                        onClick={handleCopyShare}
+                        className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center"
+                      >
+                        {copiedShare ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 text-emerald-400" />
+                            Link Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="h-4 w-4" />
+                            Share Prediction
+                          </>
+                        )}
+                      </button>
+
+                      <a
+                        href={`/api/predict/bracket/og?p=${predictionCode}&theme=${theme}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10 bg-slate-950 text-slate-200 hover:bg-slate-900 hover:text-white hover:scale-[1.01] active:scale-[0.99] cursor-pointer grow text-center"
+                      >
+                        <Image className="h-4 w-4 text-amber-400" />
+                        Download Card
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>

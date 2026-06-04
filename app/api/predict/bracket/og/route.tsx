@@ -1,24 +1,183 @@
 import { ImageResponse } from "next/og";
-import { decodePredictionState } from "../../../../../lib/bracket-prediction";
-import { FALLBACK_TEAMS_RAW } from "../../../../../lib/fallback-data";
 
+export const runtime = "edge";
+
+// Static 48-team lookup mapping for Edge runtime compatibility
+const TEAM_MAP: Record<string, { name: string; flagUrl: string }> = {
+  MEX: { name: "Mexico", flagUrl: "https://flagcdn.com/w40/mx.png" },
+  ZAF: { name: "South Africa", flagUrl: "https://flagcdn.com/w40/za.png" },
+  KOR: { name: "South Korea", flagUrl: "https://flagcdn.com/w40/kr.png" },
+  CZE: { name: "Czech Republic", flagUrl: "https://flagcdn.com/w40/cz.png" },
+  CAN: { name: "Canada", flagUrl: "https://flagcdn.com/w40/ca.png" },
+  BIH: { name: "Bosnia & Herz.", flagUrl: "https://flagcdn.com/w40/ba.png" },
+  QAT: { name: "Qatar", flagUrl: "https://flagcdn.com/w40/qa.png" },
+  SUI: { name: "Switzerland", flagUrl: "https://flagcdn.com/w40/ch.png" },
+  BRA: { name: "Brazil", flagUrl: "https://flagcdn.com/w40/br.png" },
+  MAR: { name: "Morocco", flagUrl: "https://flagcdn.com/w40/ma.png" },
+  HAI: { name: "Haiti", flagUrl: "https://flagcdn.com/w40/ht.png" },
+  SCO: { name: "Scotland", flagUrl: "https://flagcdn.com/w40/gb-sct.png" },
+  USA: { name: "United States", flagUrl: "https://flagcdn.com/w40/us.png" },
+  PAR: { name: "Paraguay", flagUrl: "https://flagcdn.com/w40/py.png" },
+  AUS: { name: "Australia", flagUrl: "https://flagcdn.com/w40/au.png" },
+  TUR: { name: "Türkiye", flagUrl: "https://flagcdn.com/w40/tr.png" },
+  GER: { name: "Germany", flagUrl: "https://flagcdn.com/w40/de.png" },
+  CUW: { name: "Curaçao", flagUrl: "https://flagcdn.com/w40/cw.png" },
+  CIV: { name: "Ivory Coast", flagUrl: "https://flagcdn.com/w40/ci.png" },
+  ECU: { name: "Ecuador", flagUrl: "https://flagcdn.com/w40/ec.png" },
+  NED: { name: "Netherlands", flagUrl: "https://flagcdn.com/w40/nl.png" },
+  JPN: { name: "Japan", flagUrl: "https://flagcdn.com/w40/jp.png" },
+  SWE: { name: "Sweden", flagUrl: "https://flagcdn.com/w40/se.png" },
+  TUN: { name: "Tunisia", flagUrl: "https://flagcdn.com/w40/tn.png" },
+  BEL: { name: "Belgium", flagUrl: "https://flagcdn.com/w40/be.png" },
+  EGY: { name: "Egypt", flagUrl: "https://flagcdn.com/w40/eg.png" },
+  IRN: { name: "Iran", flagUrl: "https://flagcdn.com/w40/ir.png" },
+  NZL: { name: "New Zealand", flagUrl: "https://flagcdn.com/w40/nz.png" },
+  ESP: { name: "Spain", flagUrl: "https://flagcdn.com/w40/es.png" },
+  CPV: { name: "Cape Verde", flagUrl: "https://flagcdn.com/w40/cv.png" },
+  KSA: { name: "Saudi Arabia", flagUrl: "https://flagcdn.com/w40/sa.png" },
+  URU: { name: "Uruguay", flagUrl: "https://flagcdn.com/w40/uy.png" },
+  FRA: { name: "France", flagUrl: "https://flagcdn.com/w40/fr.png" },
+  SEN: { name: "Senegal", flagUrl: "https://flagcdn.com/w40/sn.png" },
+  IRQ: { name: "Iraq", flagUrl: "https://flagcdn.com/w40/iq.png" },
+  NOR: { name: "Norway", flagUrl: "https://flagcdn.com/w40/no.png" },
+  ARG: { name: "Argentina", flagUrl: "https://flagcdn.com/w40/ar.png" },
+  ALG: { name: "Algeria", flagUrl: "https://flagcdn.com/w40/dz.png" },
+  AUT: { name: "Austria", flagUrl: "https://flagcdn.com/w40/at.png" },
+  JOR: { name: "Jordan", flagUrl: "https://flagcdn.com/w40/jo.png" },
+  POR: { name: "Portugal", flagUrl: "https://flagcdn.com/w40/pt.png" },
+  COD: { name: "DR Congo", flagUrl: "https://flagcdn.com/w40/cd.png" },
+  UZB: { name: "Uzbekistan", flagUrl: "https://flagcdn.com/w40/uz.png" },
+  COL: { name: "Colombia", flagUrl: "https://flagcdn.com/w40/co.png" },
+  ENG: { name: "England", flagUrl: "https://flagcdn.com/w40/gb-eng.png" },
+  CRO: { name: "Croatia", flagUrl: "https://flagcdn.com/w40/hr.png" },
+  GHA: { name: "Ghana", flagUrl: "https://flagcdn.com/w40/gh.png" },
+  PAN: { name: "Panama", flagUrl: "https://flagcdn.com/w40/pa.png" },
+};
+
+// Base64 decode function working fully on Edge runtime without Node Buffer dependency
+function decodePredictionStateLocal(code: string) {
+  try {
+    let base64 = code.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) {
+      base64 += "=";
+    }
+    const jsonStr = atob(base64);
+    const data = JSON.parse(jsonStr);
+    return {
+      groupRankings: data.g as Record<string, string[]>,
+      thirdPlaces: data.t as string[],
+      knockoutPicks: data.k as Record<string, string>,
+    };
+  } catch (e) {
+    console.error("Failed to decode bracket prediction state:", e);
+    return null;
+  }
+}
+
+// Solves 3rd-place allocations using backtracking search (Edge compatible)
+function allocateThirdPlaces(selectedGroups: string[]): Record<number, string> {
+  const pools: Record<number, string[]> = {
+    74: ["A", "B", "C", "D", "F"],
+    88: ["A", "D", "E"],
+    79: ["C", "E", "F", "H", "I"],
+    77: ["C", "D", "F", "G", "H"],
+    81: ["G", "H", "I"],
+    86: ["H", "I", "L"],
+    80: ["E", "H", "I", "J", "K"],
+    82: ["J", "K", "L"],
+  };
+
+  const assignment: Record<number, string> = {};
+  const used = new Set<string>();
+  const matchNumbers = [74, 88, 79, 77, 81, 86, 80, 82];
+
+  function backtrack(index: number): boolean {
+    if (index === matchNumbers.length) return true;
+    const matchNum = matchNumbers[index];
+    const allowed = pools[matchNum];
+
+    for (const group of selectedGroups) {
+      if (!used.has(group) && allowed.includes(group)) {
+        used.add(group);
+        assignment[matchNum] = group;
+        if (backtrack(index + 1)) return true;
+        delete assignment[matchNum];
+        used.delete(group);
+      }
+    }
+    return false;
+  }
+
+  if (backtrack(0)) {
+    return assignment;
+  }
+
+  // Fallback: greedy match
+  const remainingMatches = matchNumbers.filter((m) => !assignment[m]);
+  const unusedGroups = selectedGroups.filter((g) => !used.has(g));
+  for (let i = 0; i < remainingMatches.length; i++) {
+    if (unusedGroups[i]) {
+      assignment[remainingMatches[i]] = unusedGroups[i];
+    }
+  }
+
+  return assignment;
+}
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const p = searchParams.get("p");
+    const themeParam = searchParams.get("theme") || "light";
     const { origin } = new URL(request.url);
     const logoUrl = `${origin}/fifa-2026-logo.svg`;
 
-    let prediction = null;
-    if (p) {
-      prediction = decodePredictionState(p);
+    const isDark = themeParam === "dark";
+
+    // 1. Fallback if no prediction query code parameter is provided
+    if (!p) {
+      return renderFallbackImage(isDark);
     }
 
-    // Helper to get team info
-    const getTeam = (id?: string) => {
-      if (!id) return null;
-      return FALLBACK_TEAMS_RAW.find((t) => t.id === id) || null;
+    const prediction = decodePredictionStateLocal(p);
+    if (!prediction) {
+      return renderFallbackImage(isDark);
+    }
+
+    const { groupRankings, thirdPlaces, knockoutPicks: picks } = prediction;
+
+    // Theme Color Tokens
+    const bgStyle = isDark
+      ? {
+          backgroundColor: "#020617",
+          backgroundImage: "radial-gradient(circle at center, #0b1329 0%, #020617 100%)",
+        }
+      : {
+          backgroundColor: "#ffffff",
+          backgroundImage: "radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%)",
+        };
+
+    const textMainColor = isDark ? "#f8fafc" : "#0f172a";
+    const textMutedColor = isDark ? "#cbd5e1" : "#475569";
+    const borderHeaderColor = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(15, 23, 42, 0.08)";
+    const borderMatchColor = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(15, 23, 42, 0.06)";
+    const borderMatchInnerColor = isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(15, 23, 42, 0.04)";
+    const bgMatchColor = isDark ? "rgba(2, 6, 23, 0.4)" : "rgba(15, 23, 42, 0.04)";
+    const textMatchColor = isDark ? "#cbd5e1" : "#334155";
+    const borderConnectorColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.12)";
+    const bgFinalColor = isDark ? "rgba(2, 6, 23, 0.6)" : "rgba(255, 255, 255, 0.8)";
+    const borderFinalColor = isDark ? "rgba(251, 191, 36, 0.3)" : "rgba(217, 119, 6, 0.3)";
+    const bgFinalWinnerColor = isDark ? "rgba(251, 191, 36, 0.15)" : "rgba(217, 119, 6, 0.1)";
+    const textFinalWinnerColor = isDark ? "#fbbf24" : "#b45309";
+    const goldHighlightColor = isDark ? "#fbbf24" : "#d97706";
+    const goldDarkColor = isDark ? "#fbbf24" : "#b45309";
+    const winnerBgColor = isDark ? "#1e40af" : "#2563eb";
+    const flagPlaceholderColor = isDark ? "#334155" : "#cbd5e1";
+
+    // Helper to get team details
+    const getTeam = (teamId: string | null) => {
+      if (!teamId) return { name: "TBD", flagUrl: "" };
+      return TEAM_MAP[teamId] || { name: teamId, flagUrl: "" };
     };
 
     const getHighResFlag = (flagUrl: string | null) => {
@@ -26,82 +185,295 @@ export async function GET(request: Request) {
       return flagUrl.replace("/w40/", "/w160/");
     };
 
-    // Extract picks
-    const picks = prediction?.knockoutPicks || {};
+    // Reconstruct all match slots (73 to 104) from decoded bracket state
+    interface PredictedMatch {
+      homeId: string | null;
+      awayId: string | null;
+      winnerId: string | null;
+    }
+    const matches: Record<number, PredictedMatch> = {};
 
-    // Ultimate champion (Match 104 winner)
-    const championId = picks[104];
-    const champion = getTeam(championId);
+    // A. Resolve R32 Matches
+    const thirdPlaceAssignments = allocateThirdPlaces(thirdPlaces);
+    const r32Config: Record<number, [string, number, string, number | null]> = {
+      73: ["A", 1, "B", 1],
+      74: ["E", 0, "thirdPlace", 74],
+      75: ["C", 0, "F", 1],
+      76: ["F", 0, "C", 1],
+      77: ["I", 0, "thirdPlace", 77],
+      78: ["E", 1, "I", 1],
+      79: ["A", 0, "thirdPlace", 79],
+      80: ["L", 0, "thirdPlace", 80],
+      81: ["D", 0, "thirdPlace", 81],
+      82: ["D", 1, "thirdPlace", 82],
+      83: ["G", 0, "H", 1],
+      84: ["H", 0, "J", 1],
+      85: ["J", 0, "K", 1],
+      86: ["G", 1, "thirdPlace", 86],
+      87: ["K", 0, "L", 1],
+      88: ["B", 0, "thirdPlace", 88],
+    };
 
-    // Finalists (Match 104 home & away)
-    const finalist1Id = picks[101];
-    const finalist2Id = picks[102];
-    const finalist1 = getTeam(finalist1Id);
-    const finalist2 = getTeam(finalist2Id);
+    for (let m = 73; m <= 88; m++) {
+      const cfg = r32Config[m];
+      let homeId: string | null = null;
+      let awayId: string | null = null;
 
-    // Semi-finalists
-    const sf1Home = getTeam(picks[97]);
-    const sf1Away = getTeam(picks[98]);
-    const sf2Home = getTeam(picks[99]);
-    const sf2Away = getTeam(picks[100]);
-
-    const hasCompletedBracket = champion && finalist1 && finalist2 && sf1Home && sf1Away && sf2Home && sf2Away;
-
-    if (!hasCompletedBracket) {
-      // Return gorgeous default predictor social card
-      return new ImageResponse(
-        (
-          <div
-            style={{
-              height: "100%",
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#020617",
-              fontFamily: "sans-serif",
-              color: "#f8fafc",
-              padding: "40px",
-              border: "12px solid #fbbf24",
-            }}
-          >
-            {/* Background elements */}
-            <div tw="absolute inset-0 flex flex-col justify-between opacity-10 pointer-events-none w-full h-full">
-              <div tw="flex justify-between w-full p-4">
-                <div tw="text-lg font-bold">FIFA WORLD CUP 2026</div>
-                <div tw="text-lg font-bold">BRACKET PREDICTOR</div>
-              </div>
-              <div tw="flex justify-between w-full p-4">
-                <div tw="text-lg font-bold">104 MATCHES</div>
-                <div tw="text-lg font-bold">ROAD TO METLIFE</div>
-              </div>
-            </div>
-
-            <div tw="flex flex-col items-center max-w-4xl text-center gap-6">
-              {/* FIFA 2026 Logo */}
-              <img src={logoUrl} alt="FIFA 2026" tw="w-32 h-48 object-contain mb-2" />
-
-              <h1 tw="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent uppercase">
-                World Cup 2026™ Bracket Predictor
-              </h1>
-              <p tw="text-xl text-slate-300 max-w-2xl font-medium leading-relaxed">
-                Rank groups, choose wildcard 3rd-place qualifiers, and predict every knockout match to crown your champion!
-              </p>
-              <div tw="mt-4 px-6 py-3 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-lg shadow-lg">
-                fifawc2026.me/bracket/predict
-              </div>
-            </div>
-          </div>
-        ),
-        {
-          width: 1200,
-          height: 630,
+      if (cfg) {
+        const [hGroup, hRank, aGroup, aRank] = cfg;
+        homeId = groupRankings[hGroup]?.[hRank] || null;
+        if (aGroup === "thirdPlace") {
+          const assignedGroup = thirdPlaceAssignments[aRank!];
+          awayId = groupRankings[assignedGroup]?.[2] || null;
+        } else {
+          awayId = groupRankings[aGroup]?.[aRank!] || null;
         }
-      );
+      }
+
+      matches[m] = {
+        homeId,
+        awayId,
+        winnerId: picks[m] || picks[String(m)] || null,
+      };
     }
 
-    // Render fully custom bracket prediction card!
+    // B. Resolve R16 Matches (89 to 96)
+    for (let m = 89; m <= 96; m++) {
+      const source1 = (m - 89) * 2 + 73;
+      const source2 = (m - 89) * 2 + 74;
+      matches[m] = {
+        homeId: matches[source1]?.winnerId || null,
+        awayId: matches[source2]?.winnerId || null,
+        winnerId: picks[m] || picks[String(m)] || null,
+      };
+    }
+
+    // C. Resolve QF Matches (97 to 100)
+    for (let m = 97; m <= 100; m++) {
+      const source1 = (m - 97) * 2 + 89;
+      const source2 = (m - 97) * 2 + 90;
+      matches[m] = {
+        homeId: matches[source1]?.winnerId || null,
+        awayId: matches[source2]?.winnerId || null,
+        winnerId: picks[m] || picks[String(m)] || null,
+      };
+    }
+
+    // D. Resolve SF Matches (101 to 102)
+    for (let m = 101; m <= 102; m++) {
+      const source1 = (m - 101) * 2 + 97;
+      const source2 = (m - 101) * 2 + 98;
+      matches[m] = {
+        homeId: matches[source1]?.winnerId || null,
+        awayId: matches[source2]?.winnerId || null,
+        winnerId: picks[m] || picks[String(m)] || null,
+      };
+    }
+
+    // E. Resolve Final Match (104)
+    matches[104] = {
+      homeId: matches[101]?.winnerId || null,
+      awayId: matches[102]?.winnerId || null,
+      winnerId: picks[104] || picks["104"] || null,
+    };
+
+    const finalMatch = matches[104];
+    const fHome = getTeam(finalMatch?.homeId);
+    const fAway = getTeam(finalMatch?.awayId);
+    const fWinnerId = finalMatch?.winnerId;
+
+    const championId = finalMatch?.winnerId;
+    const champion = getTeam(championId);
+
+    // Helpers to render match boxes in symmetrical rounds (theme sensitive)
+    const renderMatchBox = (matchNumber: number) => {
+      const match = matches[matchNumber];
+      const home = getTeam(match?.homeId);
+      const away = getTeam(match?.awayId);
+      const wId = match?.winnerId;
+
+      const isHomeWinner = wId && wId === match?.homeId;
+      const isAwayWinner = wId && wId === match?.awayId;
+
+      return (
+        <div
+          key={matchNumber}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            borderRadius: "4px",
+            overflow: "hidden",
+            backgroundColor: bgMatchColor,
+            border: `1px solid ${borderMatchColor}`,
+          }}
+        >
+          {/* Home team row */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              height: "22px",
+              paddingLeft: "5px",
+              paddingRight: "5px",
+              backgroundColor: isHomeWinner ? winnerBgColor : "transparent",
+              borderBottom: `1px solid ${borderMatchInnerColor}`,
+            }}
+          >
+            {home?.flagUrl ? (
+              <img
+                src={home.flagUrl}
+                style={{ width: "15px", height: "10px", marginRight: "5px", borderRadius: "1px" }}
+              />
+            ) : (
+              <div style={{ width: "15px", height: "10px", backgroundColor: flagPlaceholderColor, marginRight: "5px", borderRadius: "1px" }} />
+            )}
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: isHomeWinner ? "bold" : "normal",
+                color: isHomeWinner ? "#ffffff" : textMatchColor,
+              }}
+            >
+              {match?.homeId || "TBD"}
+            </span>
+          </div>
+
+          {/* Away team row */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              height: "22px",
+              paddingLeft: "5px",
+              paddingRight: "5px",
+              backgroundColor: isAwayWinner ? winnerBgColor : "transparent",
+            }}
+          >
+            {away?.flagUrl ? (
+              <img
+                src={away.flagUrl}
+                style={{ width: "15px", height: "10px", marginRight: "5px", borderRadius: "1px" }}
+              />
+            ) : (
+              <div style={{ width: "15px", height: "10px", backgroundColor: flagPlaceholderColor, marginRight: "5px", borderRadius: "1px" }} />
+            )}
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: isAwayWinner ? "bold" : "normal",
+                color: isAwayWinner ? "#ffffff" : textMatchColor,
+              }}
+            >
+              {match?.awayId || "TBD"}
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    const renderColumn = (label: string, width: number, matchNumbers: number[]) => (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          width: `${width}px`,
+          height: "100%",
+          justifyContent: "space-between",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "20px",
+            borderBottom: `1px solid ${borderHeaderColor}`,
+            marginBottom: "8px",
+            width: "100%",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "8px",
+              fontWeight: "bold",
+              color: textMutedColor,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {label}
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: "460px",
+            justifyContent: "space-around",
+          }}
+        >
+          {matchNumbers.map(renderMatchBox)}
+        </div>
+      </div>
+    );
+
+    // Connector components
+    const LeftConnectorColumn = ({ count, height }: { count: number; height: number }) => (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-around",
+          height: "460px",
+          width: "6px",
+          paddingTop: "20px",
+        }}
+      >
+        {Array.from({ length: count }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              height: `${height}px`,
+              width: "6px",
+              borderTop: `1px solid ${borderConnectorColor}`,
+              borderBottom: `1px solid ${borderConnectorColor}`,
+              borderRight: `1px solid ${borderConnectorColor}`,
+            }}
+          />
+        ))}
+      </div>
+    );
+
+    const RightConnectorColumn = ({ count, height }: { count: number; height: number }) => (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-around",
+          height: "460px",
+          width: "6px",
+          paddingTop: "20px",
+        }}
+      >
+        {Array.from({ length: count }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              height: `${height}px`,
+              width: "6px",
+              borderTop: `1px solid ${borderConnectorColor}`,
+              borderBottom: `1px solid ${borderConnectorColor}`,
+              borderLeft: `1px solid ${borderConnectorColor}`,
+            }}
+          />
+        ))}
+      </div>
+    );
+
     return new ImageResponse(
       (
         <div
@@ -110,138 +482,286 @@ export async function GET(request: Request) {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "#020617",
-            backgroundImage: "radial-gradient(circle at center, #1e1b4b 0%, #020617 100%)",
-            fontFamily: "sans-serif",
-            color: "#f8fafc",
-            padding: "36px",
-            border: "8px solid #fbbf24",
-            justifyContent: "space-between",
+            ...bgStyle,
+            paddingTop: "24px",
+            paddingBottom: "24px",
+            paddingLeft: "29px",
+            paddingRight: "29px",
+            justifyContent: "flex-start",
           }}
         >
-          {/* Header branding */}
-          <div tw="flex items-center justify-between w-full border-b border-white/10 pb-4">
-            <div tw="flex items-center gap-3">
-              <img src={logoUrl} alt="FIFA 2026" tw="w-8 h-12 object-contain" />
-              <span tw="text-xl font-black tracking-wider text-amber-400 uppercase">
-                World Cup 2026™ Bracket Predictor
-              </span>
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              width: "100%",
+              height: "70px",
+              borderBottom: `1px solid ${borderHeaderColor}`,
+              paddingBottom: "10px",
+              marginBottom: "15px",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {/* Left Info: flex 1 to hold left third of the width */}
+            <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
+              <img
+                src={logoUrl}
+                style={{
+                  width: "35px",
+                  height: "50px",
+                  objectFit: "contain",
+                  marginRight: "12px",
+                  filter: isDark ? "invert(1) brightness(1.5)" : "none",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "16px", fontWeight: "900", color: textMainColor, letterSpacing: "0.05em" }}>
+                  FIFA WORLD CUP 2026™
+                </span>
+                <span style={{ fontSize: "11px", fontWeight: "bold", color: goldHighlightColor, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  Bracket Predictor
+                </span>
+              </div>
             </div>
-            <div tw="px-3.5 py-1.5 bg-slate-900 border border-white/10 rounded-full text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Fan companion prediction card
+
+            {/* Center Predicted Champion: flex 1 to align perfectly in the middle */}
+            <div style={{ display: "flex", flex: 1, justifyContent: "center" }}>
+              {championId && champion ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <span style={{ fontSize: "9px", fontWeight: "bold", color: textMutedColor, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    🏆 Predicted Champion
+                  </span>
+                  <span style={{ fontSize: "20px", fontWeight: "900", color: goldHighlightColor, textTransform: "uppercase" }}>
+                    {champion.name}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Right Branding: flex 1, items right-aligned to hold right third of the width */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flex: 1 }}>
+              <span style={{ fontSize: "12px", fontWeight: "bold", color: textMainColor }}>
+                USA · Canada · Mexico
+              </span>
+              <span style={{ fontSize: "9px", color: textMutedColor, marginTop: "2px" }}>
+                fifawc2026.me/bracket/predict
+              </span>
             </div>
           </div>
 
-          {/* Main content area */}
-          <div tw="flex flex-row justify-between items-center w-full my-auto gap-8">
-            {/* Left Side: Predicted Champion Card */}
-            <div tw="flex flex-col items-center justify-center flex-1 bg-slate-900/60 border border-amber-500/40 rounded-3xl p-6 text-center max-w-[480px]">
-              <img src={logoUrl} alt="FIFA 2026" tw="w-16 h-24 object-contain mb-2" />
-              <span tw="text-xs uppercase font-extrabold tracking-widest text-amber-400 mb-1">
-                My Predicted Champion
-              </span>
-              <h2 tw="text-4xl font-black text-white uppercase tracking-tight mb-4">
-                {champion.name}
-              </h2>
-              {champion.flagUrl && (
-                <img
-                  src={getHighResFlag(champion.flagUrl)}
-                  alt={champion.name}
-                  tw="h-28 w-44 object-cover rounded-xl shadow-2xl border border-white/20"
-                />
-              )}
+          {/* Symmetrical Bracket Skeletons */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              width: "100%",
+              height: "490px",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {/* Left Symmetrical columns */}
+            {renderColumn("Round of 32", 130, [73, 74, 75, 76, 77, 78, 79, 80])}
+            <LeftConnectorColumn count={4} height={62} />
+            {renderColumn("Round of 16", 120, [89, 90, 91, 92])}
+            <LeftConnectorColumn count={2} height={125} />
+            {renderColumn("Quarter-finals", 110, [97, 98])}
+            <LeftConnectorColumn count={1} height={250} />
+            {renderColumn("Semi-finals", 105, [101])}
+
+            {/* CENTER COLUMN: Final Match & Champion */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "170px",
+                height: "100%",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "20px",
+                  borderBottom: `1px solid ${borderHeaderColor}`,
+                  marginBottom: "8px",
+                  width: "100%",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "8px",
+                    fontWeight: "bold",
+                    color: goldHighlightColor,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Grand Final
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "460px",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
+                <span style={{ fontSize: "10px", fontWeight: "900", color: goldHighlightColor, letterSpacing: "0.1em" }}>FINAL</span>
+                <span style={{ fontSize: "8px", color: textMutedColor, marginTop: "2px" }}>MetLife Stadium</span>
+                <span style={{ fontSize: "8px", color: textMutedColor }}>July 19, 2026</span>
+
+                {/* Final match card */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                    borderRadius: "6px",
+                    border: `1px solid ${borderFinalColor}`,
+                    overflow: "hidden",
+                    backgroundColor: bgFinalColor,
+                    marginBottom: "12px",
+                    marginTop: "12px",
+                    boxShadow: isDark ? "none" : "0 2px 6px rgba(15, 23, 42, 0.05)",
+                  }}
+                >
+                  {/* Home Finalist */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      height: "28px",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                      backgroundColor: fWinnerId && fWinnerId === finalMatch?.homeId ? bgFinalWinnerColor : "transparent",
+                      borderBottom: `1px solid ${borderFinalColor}`,
+                    }}
+                  >
+                    {fHome?.flagUrl ? (
+                      <img src={fHome.flagUrl} style={{ width: "20px", height: "13px", marginRight: "8px", borderRadius: "1.5px" }} />
+                    ) : (
+                      <div style={{ width: "20px", height: "13px", backgroundColor: flagPlaceholderColor, marginRight: "8px", borderRadius: "1.5px" }} />
+                    )}
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: fWinnerId && fWinnerId === finalMatch?.homeId ? "bold" : "normal",
+                        color: fWinnerId && fWinnerId === finalMatch?.homeId ? textFinalWinnerColor : textMatchColor,
+                      }}
+                    >
+                      {finalMatch?.homeId || "TBD"}
+                    </span>
+                  </div>
+
+                  {/* Away Finalist */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      height: "28px",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                      backgroundColor: fWinnerId && fWinnerId === finalMatch?.awayId ? bgFinalWinnerColor : "transparent",
+                    }}
+                  >
+                    {fAway?.flagUrl ? (
+                      <img src={fAway.flagUrl} style={{ width: "20px", height: "13px", marginRight: "8px", borderRadius: "1.5px" }} />
+                    ) : (
+                      <div style={{ width: "20px", height: "13px", backgroundColor: flagPlaceholderColor, marginRight: "8px", borderRadius: "1.5px" }} />
+                    )}
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: fWinnerId && fWinnerId === finalMatch?.awayId ? "bold" : "normal",
+                        color: fWinnerId && fWinnerId === finalMatch?.awayId ? textFinalWinnerColor : textMatchColor,
+                      }}
+                    >
+                      {finalMatch?.awayId || "TBD"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Champion Trophy */}
+                {championId && champion ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      marginTop: "10px",
+                    }}
+                  >
+                    <span style={{ fontSize: "28px", marginBottom: "4px" }}>🏆</span>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: "900",
+                        color: goldDarkColor,
+                        textAlign: "center",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {champion.name}
+                    </span>
+                    {champion.flagUrl && (
+                      <img
+                        src={getHighResFlag(champion.flagUrl)}
+                        style={{
+                          width: "70px",
+                          height: "45px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                          marginTop: "8px",
+                          border: `1px solid ${borderFinalColor}`,
+                          boxShadow: isDark ? "0 4px 10px rgba(0,0,0,0.4)" : "0 3px 8px rgba(15,23,42,0.15)",
+                        }}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      marginTop: "10px",
+                      opacity: 0.4,
+                    }}
+                  >
+                    <span style={{ fontSize: "28px", marginBottom: "4px" }}>🏆</span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                        color: textMutedColor,
+                        textAlign: "center",
+                      }}
+                    >
+                      CHAMPION TBD
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Right Side: Visual Semis & Final Flow */}
-            <div tw="flex flex-col flex-1 gap-5 bg-slate-900/30 border border-white/5 rounded-3xl p-6">
-              <span tw="text-xs uppercase font-extrabold tracking-wider text-slate-400 border-b border-white/5 pb-2 mb-1">
-                Predicted Tournament Pathway
-              </span>
-
-              {/* Semi Final 1 */}
-              <div tw="flex flex-row justify-between items-center bg-slate-950/40 p-3 rounded-2xl border border-white/5">
-                <div tw="flex flex-col gap-1.5">
-                  <span tw="text-[10px] uppercase font-bold text-slate-500">Semi-Final 1</span>
-                  <div tw="flex items-center gap-2">
-                    {sf1Home?.flagUrl && <img src={sf1Home.flagUrl} tw="h-4 w-6 rounded shadow-sm border border-white/5" />}
-                    <span tw={`text-sm font-semibold ${finalist1Id === sf1Home?.id ? "text-amber-400 font-bold" : "text-slate-300"}`}>
-                      {sf1Home?.name}
-                    </span>
-                  </div>
-                  <div tw="flex items-center gap-2">
-                    {sf1Away?.flagUrl && <img src={sf1Away.flagUrl} tw="h-4 w-6 rounded shadow-sm border border-white/5" />}
-                    <span tw={`text-sm font-semibold ${finalist1Id === sf1Away?.id ? "text-amber-400 font-bold" : "text-slate-300"}`}>
-                      {sf1Away?.name}
-                    </span>
-                  </div>
-                </div>
-                <div tw="flex flex-col items-end gap-1">
-                  <span tw="text-[9px] uppercase font-extrabold text-amber-500 tracking-wider">Advanced</span>
-                  <div tw="flex items-center gap-1.5 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/25">
-                    {finalist1?.flagUrl && <img src={finalist1.flagUrl} tw="h-3 w-4.5 rounded-sm shadow-sm" />}
-                    <span tw="text-xs font-bold text-amber-400">{finalist1?.name}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Semi Final 2 */}
-              <div tw="flex flex-row justify-between items-center bg-slate-950/40 p-3 rounded-2xl border border-white/5">
-                <div tw="flex flex-col gap-1.5">
-                  <span tw="text-[10px] uppercase font-bold text-slate-500">Semi-Final 2</span>
-                  <div tw="flex items-center gap-2">
-                    {sf2Home?.flagUrl && <img src={sf2Home.flagUrl} tw="h-4 w-6 rounded shadow-sm border border-white/5" />}
-                    <span tw={`text-sm font-semibold ${finalist2Id === sf2Home?.id ? "text-amber-400 font-bold" : "text-slate-300"}`}>
-                      {sf2Home?.name}
-                    </span>
-                  </div>
-                  <div tw="flex items-center gap-2">
-                    {sf2Away?.flagUrl && <img src={sf2Away.flagUrl} tw="h-4 w-6 rounded shadow-sm border border-white/5" />}
-                    <span tw={`text-sm font-semibold ${finalist2Id === sf2Away?.id ? "text-amber-400 font-bold" : "text-slate-300"}`}>
-                      {sf2Away?.name}
-                    </span>
-                  </div>
-                </div>
-                <div tw="flex flex-col items-end gap-1">
-                  <span tw="text-[9px] uppercase font-extrabold text-amber-500 tracking-wider">Advanced</span>
-                  <div tw="flex items-center gap-1.5 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/25">
-                    {finalist2?.flagUrl && <img src={finalist2.flagUrl} tw="h-3 w-4.5 rounded-sm shadow-sm" />}
-                    <span tw="text-xs font-bold text-amber-400">{finalist2?.name}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grand Final Matchup */}
-              <div tw="flex flex-row justify-between items-center bg-amber-500/5 p-3 rounded-2xl border border-amber-500/20">
-                <div tw="flex flex-col gap-1.5">
-                  <span tw="text-[10px] uppercase font-bold text-amber-400">Grand Final Matchup</span>
-                  <div tw="flex items-center gap-2">
-                    {finalist1?.flagUrl && <img src={finalist1.flagUrl} tw="h-4 w-6 rounded shadow-sm border border-white/5" />}
-                    <span tw={`text-sm font-bold ${championId === finalist1Id ? "text-emerald-400" : "text-slate-200"}`}>
-                      {finalist1?.name}
-                    </span>
-                  </div>
-                  <div tw="flex items-center gap-2">
-                    {finalist2?.flagUrl && <img src={finalist2.flagUrl} tw="h-4 w-6 rounded shadow-sm border border-white/5" />}
-                    <span tw={`text-sm font-bold ${championId === finalist2Id ? "text-emerald-400" : "text-slate-200"}`}>
-                      {finalist2?.name}
-                    </span>
-                  </div>
-                </div>
-                <div tw="flex flex-col items-end gap-1">
-                  <span tw="text-[9px] uppercase font-extrabold text-emerald-400 tracking-wider">Champion Pick</span>
-                  <div tw="flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25">
-                    {champion?.flagUrl && <img src={champion.flagUrl} tw="h-3 w-4.5 rounded-sm" />}
-                    <span tw="text-xs font-black text-emerald-400">{champion?.name}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer App branding */}
-          <div tw="flex flex-row justify-between items-center w-full border-t border-white/5 pt-4 text-slate-500 text-xs font-semibold">
-            <span>Crown your champion. Play the Bracket Predictor now!</span>
-            <span>fifawc2026.me/bracket/predict</span>
+            {/* Right Symmetrical columns */}
+            {renderColumn("Semi-finals", 105, [102])}
+            <RightConnectorColumn count={1} height={250} />
+            {renderColumn("Quarter-finals", 110, [99, 100])}
+            <RightConnectorColumn count={2} height={125} />
+            {renderColumn("Round of 16", 120, [93, 94, 95, 96])}
+            <RightConnectorColumn count={4} height={62} />
+            {renderColumn("Round of 32", 130, [81, 82, 83, 84, 85, 86, 87, 88])}
           </div>
         </div>
       ),
@@ -257,4 +777,84 @@ export async function GET(request: Request) {
       headers: { "Content-Type": "application/json" },
     });
   }
+}
+
+// Fallback image template returned when params are missing or incorrect
+function renderFallbackImage(isDark: boolean) {
+  const bgStyle = isDark
+    ? {
+        backgroundColor: "#020617",
+        backgroundImage: "radial-gradient(circle at center, #0b1329 0%, #020617 100%)",
+      }
+    : {
+        backgroundColor: "#ffffff",
+        backgroundImage: "radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%)",
+      };
+
+  const borderGold = isDark ? "#fbbf24" : "#d97706";
+  const textTitle = isDark ? "#ffffff" : "#0f172a";
+  const textSub = isDark ? "#fbbf24" : "#d97706";
+  const textInfo = isDark ? "#94a3b8" : "#475569";
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          ...bgStyle,
+          fontFamily: "sans-serif",
+          color: textTitle,
+          padding: "40px",
+          border: `8px solid ${borderGold}`,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            maxWidth: "800px",
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "40px",
+              fontWeight: "900",
+              color: textSub,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              marginBottom: "10px",
+            }}
+          >
+            World Cup 2026™
+          </h1>
+          <h2
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: textTitle,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              marginBottom: "20px",
+            }}
+          >
+            Bracket Predictor
+          </h2>
+          <span style={{ fontSize: "14px", color: textInfo }}>
+            Crown your champion. Make predictions and share your bracket!
+          </span>
+        </div>
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+    }
+  );
 }

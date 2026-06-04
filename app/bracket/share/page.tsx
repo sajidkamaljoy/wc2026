@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
   p?: string;
   user?: string;
+  theme?: string;
 }
 
 interface Props {
@@ -16,14 +17,16 @@ interface Props {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const { p } = await searchParams;
+  const { p, theme } = await searchParams;
+  const normalizedTheme = theme === "dark" ? "dark" : "light";
+  
   const ogUrl = p 
-    ? `/api/predict/bracket/og?p=${encodeURIComponent(p)}` 
-    : `/api/predict/bracket/og`;
+    ? `/api/predict/bracket/og?p=${encodeURIComponent(p)}&theme=${normalizedTheme}` 
+    : `/api/predict/bracket/og?theme=${normalizedTheme}`;
 
   const canonicalUrl = p
-    ? `/bracket/share?p=${encodeURIComponent(p)}`
-    : `/bracket/share`;
+    ? `/bracket/share?p=${encodeURIComponent(p)}&theme=${normalizedTheme}`
+    : `/bracket/share?theme=${normalizedTheme}`;
 
   return {
     title: "Shared Prediction | Bracket Predictor",
