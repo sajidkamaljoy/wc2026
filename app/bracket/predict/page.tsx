@@ -6,6 +6,12 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Bracket Predictor",
   description: "Predict the group rankings and complete your 2026 World Cup bracket to predict the champion.",
+  alternates: {
+    canonical: "/bracket/predict",
+  },
+  openGraph: {
+    url: "/bracket/predict",
+  },
 };
 
 export default function BracketPredictPage() {

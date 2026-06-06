@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FixtureFilters } from "./FixtureFilters";
 import { FixtureCard } from "./FixtureCard";
 import { TimezoneBanner } from "../TimezoneBanner";
@@ -9,18 +9,19 @@ import { getLocalDateLabel } from "@/lib/timezone";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Loader2, Calendar } from "lucide-react";
 
-export function FixtureList() {
-  const [matches, setMatches] = useState<MatchWithTeams[]>([]);
+export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWithTeams[] }) {
+  const [matches, setMatches] = useState<MatchWithTeams[]>(initialMatches);
   const [stageFilter, setStageFilter] = useState<string>("");
   const [teamFilter, setTeamFilter] = useState<string>("");
   const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialMatches.length === 0);
   const [userPredictions, setUserPredictions] = useState<Record<string, { homeScore: number, awayScore: number }>>({});
   
   const [visibleCount, setVisibleCount] = useState<number>(10);
 
   const { favorites, isLoaded: favoritesLoaded } = useFavorites();
+  const isFirstMount = useRef(true);
 
   // Load the list of teams once on mount
   useEffect(() => {
@@ -49,6 +50,13 @@ export function FixtureList() {
   }, []);
 
   useEffect(() => {
+    // If it's the first mount and we have initialMatches, skip the client fetch
+    if (isFirstMount.current && initialMatches.length > 0) {
+      isFirstMount.current = false;
+      setLoading(false);
+      return;
+    }
+
     let active = true;
     setLoading(true);
     setVisibleCount(10);

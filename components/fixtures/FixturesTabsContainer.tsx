@@ -4,8 +4,9 @@ import { useState } from "react";
 import { FixtureList } from "./FixtureList";
 import { HeadToHead } from "./HeadToHead";
 import { Calendar, ArrowLeftRight } from "lucide-react";
+import type { MatchWithTeams } from "@/types";
 
-export function FixturesTabsContainer() {
+export function FixturesTabsContainer({ initialMatches = [] }: { initialMatches?: MatchWithTeams[] }) {
   const [activeTab, setActiveTab] = useState<"schedule" | "h2h">("schedule");
 
   return (
@@ -43,7 +44,7 @@ export function FixturesTabsContainer() {
       {/* Render Active Component with animations */}
       <div className="animate-fade-in duration-300">
         {activeTab === "schedule" ? (
-          <FixtureList />
+          <FixtureList initialMatches={initialMatches} />
         ) : (
           <HeadToHead />
         )}

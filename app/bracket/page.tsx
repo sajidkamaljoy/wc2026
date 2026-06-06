@@ -9,6 +9,12 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Knockout Bracket",
   description: "View the full knockout stage bracket for the FIFA World Cup 2026™.",
+  alternates: {
+    canonical: "/bracket",
+  },
+  openGraph: {
+    url: "/bracket",
+  },
 };
 
 export default async function BracketPage() {

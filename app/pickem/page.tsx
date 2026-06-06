@@ -6,6 +6,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Fan Pick'em Leaderboard",
   description: "Predict match outcomes and compete on the global leaderboard.",
+  alternates: {
+    canonical: "/pickem",
+  },
+  openGraph: {
+    url: "/pickem",
+  },
 };
 
 export const dynamic = "force-dynamic";
