@@ -33,7 +33,10 @@ export function FixturesTabsContainer() {
           }`}
         >
           <ArrowLeftRight className={`h-4 w-4 ${activeTab === "h2h" ? "text-amber-400" : "text-slate-500"}`} />
-          <span>Head-To-Head</span>
+          <span>
+            <span className="sm:hidden">H2H</span>
+            <span className="hidden sm:inline">Head-To-Head</span>
+          </span>
         </button>
       </div>
 

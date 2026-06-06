@@ -54,14 +54,56 @@ export function FullBracketTree({ matches }: Props) {
   );
 }
 
+const STAGE_ACCENTS: Record<string, { border: string; badge: string; label: string }> = {
+  ROUND_OF_32: {
+    border: "border border-white/5 border-l-4 border-l-slate-500",
+    badge: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+    label: "R32",
+  },
+  ROUND_OF_16: {
+    border: "border border-white/5 border-l-4 border-l-sky-500",
+    badge: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+    label: "R16",
+  },
+  QUARTER_FINAL: {
+    border: "border border-white/5 border-l-4 border-l-amber-500",
+    badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    label: "QF",
+  },
+  SEMI_FINAL: {
+    border: "border border-white/5 border-l-4 border-l-orange-500",
+    badge: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    label: "SF",
+  },
+  THIRD_PLACE: {
+    border: "border border-white/5 border-l-4 border-l-emerald-500",
+    badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    label: "3rd",
+  },
+  FINAL: {
+    border: "border border-white/5 border-l-4 border-l-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.08)] hover:shadow-[0_0_18px_rgba(250,204,21,0.12)]",
+    badge: "bg-yellow-400/10 text-yellow-400 border-yellow-400/20",
+    label: "Final",
+  },
+};
+
 function MatchCard({ match }: { match: any }) {
   const homeDisplay = match.homeTeam?.name || match.homePlaceholder || "TBD";
   const awayDisplay = match.awayTeam?.name || match.awayPlaceholder || "TBD";
 
+  const accent = STAGE_ACCENTS[match.stage] || {
+    border: "border border-white/5",
+    badge: "bg-slate-800 text-slate-400 border-slate-700",
+    label: "Match",
+  };
+
   return (
-    <div className="flex flex-col rounded-xl border border-white/5 bg-slate-900/40 p-4 transition-all hover:bg-slate-900/80 hover:border-white/10 relative">
-      <div className="text-[10px] uppercase font-bold text-slate-500 mb-3 flex justify-end items-center">
-        <span className="flex items-center gap-1">
+    <div className={`flex flex-col rounded-xl bg-slate-900/40 p-4 transition-all hover:bg-slate-900/80 hover:border-white/10 relative ${accent.border}`}>
+      <div className="text-[10px] uppercase font-bold mb-3 flex justify-between items-center">
+        <span className={`px-1.5 py-0.5 rounded-md border text-[9px] font-extrabold tracking-wider uppercase ${accent.badge}`}>
+          {accent.label}
+        </span>
+        <span className="flex items-center gap-1 text-slate-500">
           <Calendar className="h-3 w-3" />
           {format(new Date(match.kickoffUtc), "MMM d, HH:mm")}
         </span>

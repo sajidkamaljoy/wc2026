@@ -77,7 +77,8 @@ export function TeamRow({ team, position }: Props) {
               <div className="h-4.5 w-7 bg-slate-800 rounded border border-white/5" />
             )}
             <span className="font-semibold text-slate-200 group-hover:text-white transition-colors text-sm truncate">
-              {team.name}
+              <span className="sm:hidden">{team.shortName || team.name}</span>
+              <span className="hidden sm:inline">{team.name}</span>
             </span>
             {/* Custom Indicator Dot */}
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />

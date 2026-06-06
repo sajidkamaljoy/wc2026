@@ -18,6 +18,7 @@ export type MatchStatusType =
 export interface TeamStanding {
   id: string;
   name: string;
+  shortName: string;
   flagUrl: string | null;
   played: number;
   won: number;

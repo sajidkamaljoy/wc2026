@@ -24,8 +24,6 @@ export function NavBar() {
   const { scores } = useLiveScores();
   const hasLive = scores.some((s) => s.status === "LIVE" || s.status === "HALF_TIME");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme, isLoaded } = useTheme();
 
   // Global Ctrl+K / Cmd+K listener
@@ -40,32 +38,12 @@ export function NavBar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Close more menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setIsMoreOpen(false);
-      }
-    };
-    if (isMoreOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMoreOpen]);
-
-  // Close more menu on route change
-  useEffect(() => {
-    setIsMoreOpen(false);
-  }, [pathname]);
-
   const links = [
     { href: "/fixtures", label: "Fixtures", icon: Calendar },
     { href: "/groups", label: "Groups", icon: LayoutGrid },
     { href: "/bracket", label: "Bracket", icon: Network },
     { href: "/pickem", label: "Pick'em", icon: Target },
   ];
-
-  // On mobile: only show first 2 links inline, rest go in the ⋯ menu
-  const primaryLinks = links.slice(0, 2);
-  const moreLinks = links.slice(2);
 
   const isLinkActive = (href: string) =>
     pathname.startsWith(href) || (href === "/fixtures" && pathname === "/");
@@ -94,11 +72,9 @@ export function NavBar() {
             </span>
           </Link>
 
-          {/* Navigation */}
-          <nav className="flex items-center space-x-1">
-
-            {/* Primary links — always visible */}
-            {primaryLinks.map((link) => {
+          {/* Navigation (Desktop only) */}
+          <nav className="hidden sm:flex items-center space-x-1">
+            {links.map((link) => {
               const isActive = isLinkActive(link.href);
               const Icon = link.icon;
               return (
@@ -106,73 +82,7 @@ export function NavBar() {
                   key={link.href}
                   href={link.href}
                   prefetch={true}
-                  className={`relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${isActive
-                    ? "text-white bg-white/5 border border-white/10"
-                    : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-                    }`}
-                >
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-amber-400" : "text-slate-500"}`} />
-                  <span className="hidden sm:inline">{link.label}</span>
-                  {isActive && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-4 sm:w-6 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-
-            {/* More menu — mobile only (hidden on sm+) */}
-            <div className="relative sm:hidden" ref={moreRef}>
-              <button
-                onClick={() => setIsMoreOpen((p) => !p)}
-                aria-label="More navigation options"
-                aria-expanded={isMoreOpen}
-                className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-300 ${isMoreOpen || moreLinks.some((l) => isLinkActive(l.href))
-                  ? "text-white bg-white/5 border-white/10"
-                  : "text-slate-400 border-transparent hover:text-white hover:bg-white/5"
-                  }`}
-              >
-                <MoreHorizontal className="h-4 w-4 shrink-0" />
-                {/* Amber dot when an overflow route is active */}
-                {moreLinks.some((l) => isLinkActive(l.href)) && (
-                  <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                )}
-              </button>
-
-              {/* Dropdown */}
-              {isMoreOpen && (
-                <div className="absolute left-0 top-full mt-2 z-50 min-w-[150px] rounded-xl border border-white/10 bg-slate-900 shadow-2xl overflow-hidden">
-                  {moreLinks.map((link) => {
-                    const isActive = isLinkActive(link.href);
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setIsMoreOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 text-sm border-b border-white/5 last:border-b-0 transition-colors ${isActive
-                          ? "text-amber-400 bg-white/5"
-                          : "text-slate-300 hover:text-white hover:bg-white/5"
-                          }`}
-                      >
-                        <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-amber-400" : "text-slate-500"}`} />
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* More links — desktop only (hidden on mobile) */}
-            {moreLinks.map((link) => {
-              const isActive = isLinkActive(link.href);
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  prefetch={true}
-                  className={`hidden sm:flex relative items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${isActive
+                  className={`relative flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${isActive
                     ? "text-white bg-white/5 border border-white/10"
                     : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
                     }`}
@@ -185,7 +95,6 @@ export function NavBar() {
                 </Link>
               );
             })}
-
           </nav>
         </div>
 

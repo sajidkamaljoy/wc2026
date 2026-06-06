@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
+import { BottomNav } from "@/components/BottomNav";
 import { PageWrapper } from "@/components/PageWrapper";
 import { LiveScoreProvider } from "@/components/live/LiveScoreProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
@@ -77,12 +78,15 @@ export default function RootLayout({
             <NavBar />
 
             {/* Global Page Wrapper */}
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 sm:py-8 md:py-12">
               <PageWrapper>{children}</PageWrapper>
             </main>
 
             {/* Global Footer */}
             <Footer />
+
+            {/* Mobile Bottom Navigation */}
+            <BottomNav />
           </LiveScoreProvider>
         </ThemeProvider>
       </body>
