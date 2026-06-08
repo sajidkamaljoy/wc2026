@@ -39,6 +39,7 @@ const fetchGroups = unstable_cache(
         teams: g.teams.map((t) => ({
           id: t.id,
           name: t.name,
+          shortName: t.shortName,
           flagUrl: t.flagUrl,
           played: t.played,
           won: t.won,

@@ -12,11 +12,21 @@ export function useUserSession() {
     };
 
     let id = getCookie("deviceId");
+    
     if (!id) {
-      id = crypto.randomUUID();
-      // Set a long-lived cookie
+      // Fallback to localStorage if the cookie was cleared
+      id = localStorage.getItem("deviceId");
+      if (!id) {
+        // Generate new device ID if both are missing
+        id = crypto.randomUUID();
+      }
+      // Set/Restore the cookie
       document.cookie = `deviceId=${id}; path=/; max-age=31536000; SameSite=Lax`;
     }
+
+    // Ensure localStorage stays in sync with the current device ID
+    localStorage.setItem("deviceId", id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeviceId(id);
   }, []);
 
