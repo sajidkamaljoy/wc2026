@@ -7,7 +7,7 @@ import { LiveScoreBadge } from "@/components/live/LiveScoreBadge";
 import { KickoffTime } from "./KickoffTime";
 import { Countdown } from "./Countdown";
 import { useFavorites } from "@/hooks/useFavorites";
-import { MapPin, Trophy, Star } from "lucide-react";
+import { MapPin, Trophy, Star, Tv } from "lucide-react";
 import Link from "next/link";
 import { PredictionModal } from "./PredictionModal";
 
@@ -22,7 +22,10 @@ export function FixtureCard({ match, userPrediction }: Props) {
   const [localPrediction, setLocalPrediction] = useState(userPrediction);
 
   useEffect(() => {
-    setLocalPrediction(userPrediction);
+    const timer = setTimeout(() => {
+      setLocalPrediction(userPrediction);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [userPrediction]);
   const liveData = getScore(match.id);
 
@@ -99,12 +102,12 @@ export function FixtureCard({ match, userPrediction }: Props) {
         </div>
       </div>
 
-      {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
-        <>
-          <div className="w-full mt-3 pt-3 border-t border-white/10 flex justify-center px-4 pb-1">
+      {((status === "SCHEDULED" && match.homeTeam && match.awayTeam) || isLive || match.matchNumber === 1) && (
+        <div className="w-full mt-3 pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2 px-4 pb-1.5">
+          {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className={`w-full py-2 px-6 rounded-xl font-semibold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${localPrediction
+              className={`flex-1 py-2 px-6 rounded-xl font-semibold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${localPrediction
                   ? "bg-sky-500/10 border border-sky-400/20 text-sky-400 hover:bg-sky-500/25 hover:border-sky-400/35 active:scale-[0.98]"
                   : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold border border-amber-500/10 active:scale-[0.98]"
                 }`}
@@ -120,23 +123,41 @@ export function FixtureCard({ match, userPrediction }: Props) {
                 <span>Make a Prediction</span>
               )}
             </button>
-          </div>
+          )}
 
-          <PredictionModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            matchId={match.id}
-            homeTeamName={match.homeTeam.name}
-            awayTeamName={match.awayTeam.name}
-            homeFlagUrl={match.homeTeam.flagUrl}
-            awayFlagUrl={match.awayTeam.flagUrl}
-            initialHomeScore={localPrediction?.homeScore}
-            initialAwayScore={localPrediction?.awayScore}
-            onSave={(homeScore, awayScore) => {
-              setLocalPrediction({ homeScore, awayScore });
-            }}
-          />
-        </>
+          {(isLive || match.matchNumber === 1) && (
+            <Link
+              href="/watch"
+              className="flex-1 py-2 px-6 rounded-xl font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white active:scale-[0.98]"
+            >
+              <Tv className="h-3.5 w-3.5" />
+              <span>Watch Live Stream</span>
+              {isLive && (
+                <span className="relative flex h-1.5 w-1.5 ml-1">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                </span>
+              )}
+            </Link>
+          )}
+        </div>
+      )}
+
+      {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
+        <PredictionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          matchId={match.id}
+          homeTeamName={match.homeTeam.name}
+          awayTeamName={match.awayTeam.name}
+          homeFlagUrl={match.homeTeam.flagUrl}
+          awayFlagUrl={match.awayTeam.flagUrl}
+          initialHomeScore={localPrediction?.homeScore}
+          initialAwayScore={localPrediction?.awayScore}
+          onSave={(homeScore, awayScore) => {
+            setLocalPrediction({ homeScore, awayScore });
+          }}
+        />
       )}
     </div>
   );

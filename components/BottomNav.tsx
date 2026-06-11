@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLiveScores } from "@/components/live/useLiveScores";
-import { Calendar, LayoutGrid, Network, Target } from "lucide-react";
+import { Calendar, LayoutGrid, Network, Target, Tv } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export function BottomNav() {
     { href: "/groups", label: "Groups", icon: LayoutGrid },
     { href: "/bracket", label: "Bracket", icon: Network },
     { href: "/pickem", label: "Pick'em", icon: Target },
+    { href: "/watch", label: "Watch", icon: Tv, showLiveBadge: true },
   ];
 
   const isLinkActive = (href: string) =>

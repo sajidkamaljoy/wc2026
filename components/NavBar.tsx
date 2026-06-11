@@ -15,6 +15,7 @@ import {
   Moon,
   Target,
   MoreHorizontal,
+  Tv,
 } from "lucide-react";
 import { SearchModal } from "@/components/search/SearchModal";
 import { useTheme } from "@/hooks/useTheme";
@@ -43,6 +44,7 @@ export function NavBar() {
     { href: "/groups", label: "Groups", icon: LayoutGrid },
     { href: "/bracket", label: "Bracket", icon: Network },
     { href: "/pickem", label: "Pick'em", icon: Target },
+    { href: "/watch", label: "Watch Live", icon: Tv },
   ];
 
   const isLinkActive = (href: string) =>
@@ -88,7 +90,15 @@ export function NavBar() {
                     }`}
                 >
                   <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-amber-400" : "text-slate-500"}`} />
-                  <span>{link.label}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span>{link.label}</span>
+                    {link.href === "/watch" && (
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                      </span>
+                    )}
+                  </span>
                   {isActive && (
                     <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-6 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full" />
                   )}
