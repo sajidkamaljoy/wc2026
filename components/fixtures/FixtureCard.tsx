@@ -36,6 +36,13 @@ export function FixtureCard({ match, userPrediction }: Props) {
   const isLive = status === "LIVE" || status === "HALF_TIME";
   const isKnockout = !match.groupId;
 
+  // Watch link condition: match is live or is currently running within 2 hours of kickoff, and not finished
+  const now = new Date();
+  const kickoff = new Date(match.kickoffUtc);
+  const end = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+  const isTimeRunning = now >= kickoff && now <= end && status !== "FINISHED";
+  const showWatchLink = isLive || isTimeRunning;
+
   return (
     <div className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${isLive
         ? "border-red-500/30 bg-gradient-to-r from-red-500/5 via-slate-900/40 to-slate-900/40 shadow-[0_4px_20px_rgba(239,68,68,0.08)]"
@@ -102,7 +109,7 @@ export function FixtureCard({ match, userPrediction }: Props) {
         </div>
       </div>
 
-      {((status === "SCHEDULED" && match.homeTeam && match.awayTeam) || isLive || (match.matchNumber === 1 && status !== "FINISHED")) && (
+      {((status === "SCHEDULED" && match.homeTeam && match.awayTeam) || showWatchLink) && (
         <div className="w-full mt-3 pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2 px-4 pb-1.5">
           {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
             <button
@@ -125,7 +132,7 @@ export function FixtureCard({ match, userPrediction }: Props) {
             </button>
           )}
 
-          {(isLive || match.matchNumber === 1) && (
+          {showWatchLink && (
             <Link
               href={`/watch?matchNumber=${match.matchNumber}`}
               className="flex-1 py-2 px-6 rounded-xl font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white active:scale-[0.98]"
