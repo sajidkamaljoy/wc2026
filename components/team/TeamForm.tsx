@@ -50,7 +50,7 @@ export function TeamForm({ teamId }: Props) {
       
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 overflow-x-auto pb-2">
         {form.map((match) => (
-          <div key={match.id} className="flex flex-col items-center min-w-[80px] shrink-0 gap-2">
+          <div key={match.id} className="flex flex-col items-center min-w-[90px] shrink-0 gap-2">
             <div
               className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-black border-2 ${
                 match.outcome === "W"
@@ -66,7 +66,7 @@ export function TeamForm({ teamId }: Props) {
             <div className="flex flex-col items-center text-center">
               <span className="text-[10px] font-bold text-slate-300">vs {match.opponent}</span>
               <span className="text-[10px] text-slate-500 font-mono">{match.score}</span>
-              <span className="text-[9px] text-slate-600 mt-1">{format(new Date(match.date), "MMM d")}</span>
+              <span className="text-[9px] text-slate-600 mt-1">{format(new Date(match.date), "MMM d, yyyy")}</span>
             </div>
           </div>
         ))}
