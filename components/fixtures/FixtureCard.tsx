@@ -102,7 +102,7 @@ export function FixtureCard({ match, userPrediction }: Props) {
         </div>
       </div>
 
-      {((status === "SCHEDULED" && match.homeTeam && match.awayTeam) || isLive || match.matchNumber === 1) && (
+      {((status === "SCHEDULED" && match.homeTeam && match.awayTeam) || isLive || (match.matchNumber === 1 && status !== "FINISHED")) && (
         <div className="w-full mt-3 pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2 px-4 pb-1.5">
           {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
             <button

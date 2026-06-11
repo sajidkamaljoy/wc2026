@@ -36,14 +36,13 @@ export function LiveWatchClient({ match }: Props) {
     }, 4500);
   };
 
-  // Load state from localStorage in hydration-safe manner
+  // Load initial cheer state on mount
   useEffect(() => {
     const initTimer = setTimeout(() => {
       setMounted(true);
       const storedCheer = localStorage.getItem(`wc2026_cheer_${match.id}`);
       if (storedCheer === "home" || storedCheer === "away") {
         setHasCheered(storedCheer);
-        // Simulate adding a user's vote
         setCheerVotes((prev) => ({
           home: storedCheer === "home" ? prev.home + 1 : prev.home,
           away: storedCheer === "away" ? prev.away + 1 : prev.away,
@@ -177,21 +176,21 @@ export function LiveWatchClient({ match }: Props) {
 
         {/* Progress Bar */}
         <div className="relative h-6 w-full rounded-full bg-slate-950/80 overflow-hidden border border-white/5 flex items-center justify-between px-3 text-[10px] font-extrabold font-mono tracking-wider shadow-inner">
-          {/* Home Team (Mexico) Bar */}
+          {/* Home Team Bar */}
           <div
             className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-emerald-600/40 via-emerald-500/30 to-emerald-400/20 border-r border-emerald-500/30 transition-all duration-700"
             style={{ width: `${homePercent}%` }}
           />
-          {/* Away Team (South Africa) Bar */}
+          {/* Away Team Bar */}
           <div
             className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-yellow-600/40 via-amber-500/30 to-amber-400/20 border-l border-amber-500/30 transition-all duration-700"
             style={{ width: `${awayPercent}%` }}
           />
 
-          <span className="z-10 text-emerald-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <span className="z-10 text-emerald-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-semibold">
             {match.homeTeam?.name || "Home"} {homePercent}%
           </span>
-          <span className="z-10 text-amber-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <span className="z-10 text-amber-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-semibold">
             {awayPercent}% {match.awayTeam?.name || "Away"}
           </span>
         </div>
@@ -209,8 +208,12 @@ export function LiveWatchClient({ match }: Props) {
                 : "bg-emerald-500/10 border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20 active:scale-[0.98]"
             }`}
           >
-            {match.homeTeam?.id === "MEX" ? "🇲🇽" : "⚽"} Cheer {match.homeTeam?.name || "Home"}
+            {match.homeTeam?.flagUrl ? (
+              <img src={match.homeTeam.flagUrl} alt="" className="h-3 w-5 object-cover rounded shadow-sm inline shrink-0" />
+            ) : "⚽"}
+            <span>Cheer {match.homeTeam?.name || "Home"}</span>
           </button>
+          
           <button
             onClick={() => handleCheer("away")}
             disabled={!!hasCheered}
@@ -222,7 +225,10 @@ export function LiveWatchClient({ match }: Props) {
                 : "bg-amber-500/10 border-amber-500/25 text-amber-400 hover:bg-amber-500/20 active:scale-[0.98]"
             }`}
           >
-            {match.awayTeam?.id === "ZAF" ? "🇿🇦" : "⚽"} Cheer {match.awayTeam?.name || "Away"}
+            {match.awayTeam?.flagUrl ? (
+              <img src={match.awayTeam.flagUrl} alt="" className="h-3 w-5 object-cover rounded shadow-sm inline shrink-0" />
+            ) : "⚽"}
+            <span>Cheer {match.awayTeam?.name || "Away"}</span>
           </button>
         </div>
         

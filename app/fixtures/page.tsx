@@ -1,5 +1,6 @@
 import { FixturesTabsContainer } from "@/components/fixtures/FixturesTabsContainer";
 import { NewsFeed } from "@/components/news/NewsFeed";
+import { LiveMatchBanner } from "@/components/live/LiveMatchBanner";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { unstable_cache } from "next/cache";
@@ -57,6 +58,9 @@ export default async function FixturesPage() {
   return (
     <div className="w-full">
       <NewsFeed />
+
+      {/* Live Match Announcement Banner */}
+      <LiveMatchBanner matches={initialMatches} />
 
       {/* Page Header */}
       <div className="mt-12 mb-8">
