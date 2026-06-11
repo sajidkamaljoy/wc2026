@@ -108,7 +108,7 @@ export function LiveMatchBanner({ matches = [] }: Props) {
 
       {/* Right Column: Action Button */}
       <Link
-        href="/watch"
+        href={`/watch?matchNumber=${activeMatch.matchNumber}`}
         className="px-5 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-md bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white shrink-0 hover:scale-[1.02] active:scale-[0.98]"
       >
         <Tv className="h-3.5 w-3.5 animate-pulse" />

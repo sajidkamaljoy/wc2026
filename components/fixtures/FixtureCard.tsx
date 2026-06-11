@@ -127,7 +127,7 @@ export function FixtureCard({ match, userPrediction }: Props) {
 
           {(isLive || match.matchNumber === 1) && (
             <Link
-              href="/watch"
+              href={`/watch?matchNumber=${match.matchNumber}`}
               className="flex-1 py-2 px-6 rounded-xl font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white active:scale-[0.98]"
             >
               <Tv className="h-3.5 w-3.5" />
