@@ -1,9 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getLiveStreamsForMatch, getStreamsForStreamedMatchId } from "@/lib/streamed-api";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limitResult = rateLimit(ip, 30); // 30 requests per minute
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((limitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const matchId = searchParams.get("matchId");
 
@@ -14,35 +29,27 @@ export async function GET(request: Request) {
       );
     }
 
-    let homeInfo = null;
-    let awayInfo = null;
+    const dbMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        homeTeam: { select: { id: true, name: true, shortName: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true } },
+      },
+    });
 
-    if (matchId === "mex-vs-zaf-1") {
-      homeInfo = { id: "MEX", name: "Mexico", shortName: "Mexico" };
-      awayInfo = { id: "ZAF", name: "South Africa", shortName: "South Africa" };
-    } else {
-      const dbMatch = await prisma.match.findUnique({
-        where: { id: matchId },
-        include: {
-          homeTeam: { select: { id: true, name: true, shortName: true } },
-          awayTeam: { select: { id: true, name: true, shortName: true } },
-        },
-      });
-
-      if (!dbMatch) {
-        // If the match does not exist in the database, it must be a raw streamed.pk sports event ID!
-        console.log(`ℹ️ Match ID "${matchId}" not found in DB. Attempting raw streamed.pk lookup.`);
-        const streams = await getStreamsForStreamedMatchId(matchId);
-        return NextResponse.json({ streams });
-      }
-
-      homeInfo = dbMatch.homeTeam
-        ? { id: dbMatch.homeTeam.id, name: dbMatch.homeTeam.name, shortName: dbMatch.homeTeam.shortName }
-        : { id: "", name: dbMatch.homePlaceholder || "" };
-      awayInfo = dbMatch.awayTeam
-        ? { id: dbMatch.awayTeam.id, name: dbMatch.awayTeam.name, shortName: dbMatch.awayTeam.shortName }
-        : { id: "", name: dbMatch.awayPlaceholder || "" };
+    if (!dbMatch) {
+      // If the match does not exist in the database, it must be a raw streamed.pk sports event ID!
+      console.log(`ℹ️ Match ID "${matchId}" not found in DB. Attempting raw streamed.pk lookup.`);
+      const streams = await getStreamsForStreamedMatchId(matchId);
+      return NextResponse.json({ streams });
     }
+
+    const homeInfo = dbMatch.homeTeam
+      ? { id: dbMatch.homeTeam.id, name: dbMatch.homeTeam.name, shortName: dbMatch.homeTeam.shortName }
+      : { id: "", name: dbMatch.homePlaceholder || "" };
+    const awayInfo = dbMatch.awayTeam
+      ? { id: dbMatch.awayTeam.id, name: dbMatch.awayTeam.name, shortName: dbMatch.awayTeam.shortName }
+      : { id: "", name: dbMatch.awayPlaceholder || "" };
 
     if (!homeInfo || !awayInfo || (!homeInfo.name && !homeInfo.id) || (!awayInfo.name && !awayInfo.id)) {
       return NextResponse.json({ streams: [] });

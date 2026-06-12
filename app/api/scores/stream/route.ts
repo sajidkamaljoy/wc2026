@@ -1,4 +1,6 @@
+import { NextRequest, NextResponse } from "next/server";
 import { getLiveScoresMapped } from "@/lib/football-api";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,9 +37,24 @@ function ensurePoller() {
   pollInterval = setInterval(poll, 30_000);
 }
 
-export async function GET() {
-  ensurePoller();
-  const encoder = new TextEncoder();
+export async function GET(req: NextRequest) {
+  try {
+    const ip = getClientIp(req);
+    const limitResult = rateLimit(ip, 5); // 5 connections per minute per IP
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((limitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
+    ensurePoller();
+    const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     start(controller) {
@@ -62,6 +79,10 @@ export async function GET() {
       // Cleanup when the client disconnects
       return () => {
         listeners.delete(send);
+        if (listeners.size === 0 && pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
       };
     },
     cancel() {
@@ -78,4 +99,8 @@ export async function GET() {
       "X-Accel-Buffering": "no",
     },
   });
+  } catch (error) {
+    console.error("Error in SSE stream GET handler:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }

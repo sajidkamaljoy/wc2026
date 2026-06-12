@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { bracketPredictionSchema } from "@/lib/validations";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limitResult = rateLimit(ip, 60); // 60 requests per minute
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((limitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const deviceId = req.cookies.get("deviceId")?.value;
     if (!deviceId) {
       return NextResponse.json({ prediction: null, user: null });
@@ -30,16 +46,32 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limitResult = rateLimit(ip, 10); // 10 requests per minute
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((limitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const deviceId = req.cookies.get("deviceId")?.value;
     if (!deviceId) {
       return NextResponse.json({ error: "Missing deviceId cookie" }, { status: 401 });
     }
 
-    const { groupRankings, thirdPlaces, knockoutPicks } = await req.json();
-
-    if (!groupRankings || !thirdPlaces || !knockoutPicks) {
-      return NextResponse.json({ error: "Invalid prediction data" }, { status: 400 });
+    const body = await req.json();
+    const validation = bracketPredictionSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: "Invalid prediction data", details: validation.error.format() }, { status: 400 });
     }
+
+    const { groupRankings, thirdPlaces, knockoutPicks } = validation.data;
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { deviceId } });

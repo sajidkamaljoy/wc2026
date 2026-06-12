@@ -1,18 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { predictionSchema } from "@/lib/validations";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limitResult = rateLimit(ip, 20); // 20 requests per minute
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((limitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const deviceId = req.cookies.get("deviceId")?.value;
     if (!deviceId) {
       return NextResponse.json({ error: "Missing deviceId cookie" }, { status: 401 });
     }
 
-    const { matchId, homeScore, awayScore } = await req.json();
-
-    if (!matchId || typeof homeScore !== "number" || typeof awayScore !== "number") {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    const body = await req.json();
+    const validation = predictionSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: "Invalid data", details: validation.error.format() }, { status: 400 });
     }
+
+    const { matchId, homeScore, awayScore } = validation.data;
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { deviceId } });
@@ -64,6 +82,20 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limitResult = rateLimit(ip, 60); // 60 requests per minute
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((limitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const deviceId = req.cookies.get("deviceId")?.value;
     if (!deviceId) {
       return NextResponse.json({ predictions: [], user: null });
