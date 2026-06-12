@@ -5,8 +5,6 @@ import type { MatchWithTeams, Stream } from "@/types";
 import {
   Tv,
   Flame,
-  Volume2,
-  VolumeX,
   Maximize2
 } from "lucide-react";
 
@@ -20,28 +18,12 @@ export function LiveWatchClient({ match }: Props) {
   const [hasCheered, setHasCheered] = useState<"home" | "away" | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Sound / Player settings
-  const [isMuted, setIsMuted] = useState(true);
-  const [showMuteTooltip, setShowMuteTooltip] = useState(false);
-  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Stream states
   const [streams, setStreams] = useState<Stream[]>([]);
   const [activeStream, setActiveStream] = useState<Stream | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isBackup, setIsBackup] = useState(false);
-
-  const handleToggleMute = () => {
-    setIsMuted((prev) => !prev);
-    setShowMuteTooltip(true);
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current);
-    }
-    tooltipTimeoutRef.current = setTimeout(() => {
-      setShowMuteTooltip(false);
-    }, 4500);
-  };
 
   // Load initial cheer state on mount
   useEffect(() => {
@@ -59,9 +41,6 @@ export function LiveWatchClient({ match }: Props) {
 
     return () => {
       clearTimeout(initTimer);
-      if (tooltipTimeoutRef.current) {
-        clearTimeout(tooltipTimeoutRef.current);
-      }
     };
   }, [match.id]);
 
@@ -194,29 +173,8 @@ export function LiveWatchClient({ match }: Props) {
 
         {/* Quick Player Bar */}
         <div className="bg-slate-950/90 px-4 py-3 flex items-center justify-between border-t border-white/5 backdrop-blur text-slate-400 text-xs">
-          <div className="flex items-center gap-3 relative">
-            <button
-              onClick={handleToggleMute}
-              className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 font-semibold bg-slate-900/60 px-2.5 py-1.5 rounded-lg border border-white/5"
-            >
-              {isMuted ? (
-                <>
-                  <VolumeX className="h-4 w-4 text-red-400" />
-                  <span>Unmute Audio</span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="h-4 w-4 text-emerald-400" />
-                  <span>Audio Active</span>
-                </>
-              )}
-            </button>
-            
-            {showMuteTooltip && (
-              <div className="absolute left-0 bottom-full mb-2 w-64 p-3 rounded-xl bg-slate-900 border border-amber-500/20 text-amber-400 text-[11px] font-medium shadow-xl backdrop-blur animate-fade-in z-20">
-                💡 <span className="font-bold">Audio Control Tip:</span> Cross-origin browser policies prevent external pages from altering the stream sound. Please click the speaker icon in the player&apos;s control bar directly to unmute!
-              </div>
-            )}
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            🔇 Use the player controls directly to toggle sound
           </div>
 
           <div className="flex items-center gap-4">
