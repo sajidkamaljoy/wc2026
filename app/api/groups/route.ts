@@ -6,12 +6,7 @@ const getGroups = unstable_cache(
   async () => {
     return prisma.group.findMany({
       include: {
-        teams: {
-          orderBy: [
-            { points: "desc" },
-            { goalsFor: "desc" },
-          ],
-        },
+        teams: true,
       },
       orderBy: { id: "asc" },
     });
@@ -24,14 +19,28 @@ export async function GET() {
   try {
     const groups = await getGroups();
 
-    const formatted = groups.map((g) => ({
-      id: g.id,
-      name: g.name,
-      teams: g.teams.map((t) => ({
-        ...t,
-        goalDiff: t.goalsFor - t.goalsAgainst,
-      })),
-    }));
+    const formatted = groups.map((g) => {
+      const sortedTeams = [...g.teams].sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        const gdA = a.goalsFor - a.goalsAgainst;
+        const gdB = b.goalsFor - b.goalsAgainst;
+        if (gdB !== gdA) {
+          return gdB - gdA;
+        }
+        return b.goalsFor - a.goalsFor;
+      });
+
+      return {
+        id: g.id,
+        name: g.name,
+        teams: sortedTeams.map((t) => ({
+          ...t,
+          goalDiff: t.goalsFor - t.goalsAgainst,
+        })),
+      };
+    });
 
     return NextResponse.json({ groups: formatted });
   } catch (error) {

@@ -100,22 +100,34 @@ export default async function SharePage({ searchParams }: Props) {
   try {
     const dbGroups = await prisma.group.findMany({
       include: {
-        teams: {
-          orderBy: [{ points: "desc" }, { goalsFor: "desc" }],
-        },
+        teams: true,
       },
       orderBy: { id: "asc" },
     });
     
-    groups = dbGroups.map((g) => ({
-      id: g.id,
-      name: g.name,
-      teams: g.teams.map((t) => ({
-        id: t.id,
-        name: t.name,
-        flagUrl: t.flagUrl,
-      })),
-    }));
+    groups = dbGroups.map((g) => {
+      const sortedTeams = [...g.teams].sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        const gdA = a.goalsFor - a.goalsAgainst;
+        const gdB = b.goalsFor - b.goalsAgainst;
+        if (gdB !== gdA) {
+          return gdB - gdA;
+        }
+        return b.goalsFor - a.goalsFor;
+      });
+
+      return {
+        id: g.id,
+        name: g.name,
+        teams: sortedTeams.map((t) => ({
+          id: t.id,
+          name: t.name,
+          flagUrl: t.flagUrl,
+        })),
+      };
+    });
   } catch {
     console.error("⚠️ [Prisma] Could not fetch groups for share page, loading local fallback.");
     // Inline groups fallback to ensure the page works completely offline

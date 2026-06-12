@@ -58,12 +58,7 @@ export default async function TeamPage({ params }: Props) {
     include: {
       group: {
         include: {
-          teams: {
-            orderBy: [
-              { points: "desc" },
-              { goalsFor: "desc" }
-            ]
-          }
+          teams: true,
         }
       }
     }
@@ -73,8 +68,20 @@ export default async function TeamPage({ params }: Props) {
     redirect("/groups");
   }
 
-  // Calculate current group position
-  const groupPosition = team.group.teams.findIndex((t) => t.id === team.id) + 1;
+  // Calculate current group position using JS sorting (Points -> GD -> GF desc)
+  const sortedGroupTeams = [...team.group.teams].sort((a, b) => {
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+    const gdA = a.goalsFor - a.goalsAgainst;
+    const gdB = b.goalsFor - b.goalsAgainst;
+    if (gdB !== gdA) {
+      return gdB - gdA;
+    }
+    return b.goalsFor - a.goalsFor;
+  });
+
+  const groupPosition = sortedGroupTeams.findIndex((t) => t.id === team.id) + 1;
 
   const dbMatches = await prisma.match.findMany({
     where: {

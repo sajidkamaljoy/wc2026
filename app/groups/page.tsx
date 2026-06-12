@@ -26,17 +26,13 @@ const fetchGroups = unstable_cache(
     try {
       const groups = await prisma.group.findMany({
         include: {
-          teams: {
-            orderBy: [{ points: "desc" }, { goalsFor: "desc" }],
-          },
+          teams: true,
         },
         orderBy: { id: "asc" },
       });
 
-      return groups.map((g) => ({
-        id: g.id,
-        name: g.name,
-        teams: g.teams.map((t) => ({
+      return groups.map((g) => {
+        const mappedTeams = g.teams.map((t) => ({
           id: t.id,
           name: t.name,
           shortName: t.shortName,
@@ -50,8 +46,25 @@ const fetchGroups = unstable_cache(
           goalDiff: t.goalsFor - t.goalsAgainst,
           points: t.points,
           groupId: t.groupId,
-        })),
-      }));
+        }));
+
+        // Sort by Points, then GD, then Goals For (all desc)
+        mappedTeams.sort((a, b) => {
+          if (b.points !== a.points) {
+            return b.points - a.points;
+          }
+          if (b.goalDiff !== a.goalDiff) {
+            return b.goalDiff - a.goalDiff;
+          }
+          return b.goalsFor - a.goalsFor;
+        });
+
+        return {
+          id: g.id,
+          name: g.name,
+          teams: mappedTeams,
+        };
+      });
     } catch (error) {
       console.error("⚠️ [Prisma] Could not load groups standings. Database is unreachable. Falling back to empty standings.", error);
       return [];

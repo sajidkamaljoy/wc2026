@@ -9,13 +9,24 @@ export async function calculatePathway(teamId: string): Promise<TeamPathway> {
     include: {
       group: {
         include: {
-          teams: { orderBy: [{ points: "desc" }, { goalsFor: "desc" }] },
+          teams: true,
         },
       },
     },
   });
 
-  const groupTeams = team.group.teams;
+  const groupTeams = [...team.group.teams].sort((a, b) => {
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+    const gdA = a.goalsFor - a.goalsAgainst;
+    const gdB = b.goalsFor - b.goalsAgainst;
+    if (gdB !== gdA) {
+      return gdB - gdA;
+    }
+    return b.goalsFor - a.goalsFor;
+  });
+
   const currentPosition =
     groupTeams.findIndex((t) => t.id === teamId) + 1; // 1-indexed
 
