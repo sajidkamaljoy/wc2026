@@ -2,8 +2,7 @@ import { FixturesTabsContainer } from "@/components/fixtures/FixturesTabsContain
 import { NewsFeed } from "@/components/news/NewsFeed";
 import { LiveMatchBanner } from "@/components/live/LiveMatchBanner";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/db";
-import { unstable_cache } from "next/cache";
+import { getCachedFixtures } from "@/lib/fixtures";
 
 export const metadata: Metadata = {
   title: "Tournament Fixtures & Calendar",
@@ -16,44 +15,27 @@ export const metadata: Metadata = {
   },
 };
 
-const fetchFixtures = unstable_cache(
-  async () => {
-    try {
-      const dbMatches = await prisma.match.findMany({
-        include: {
-          homeTeam: { select: { id: true, name: true, flagUrl: true } },
-          awayTeam: { select: { id: true, name: true, flagUrl: true } },
-          venue: { select: { name: true, city: true, country: true } },
-        },
-        orderBy: { kickoffUtc: "asc" },
-      });
-
-      return dbMatches.map((m) => ({
-        id: m.id,
-        matchNumber: m.matchNumber,
-        stage: m.stage,
-        groupId: m.groupId,
-        kickoffUtc: m.kickoffUtc.toISOString(),
-        homeTeam: m.homeTeam,
-        awayTeam: m.awayTeam,
-        homePlaceholder: m.homePlaceholder,
-        awayPlaceholder: m.awayPlaceholder,
-        venue: m.venue,
-        status: m.status,
-        homeScore: m.homeScore,
-        awayScore: m.awayScore,
-      }));
-    } catch (error) {
-      console.error("⚠️ [Prisma] Could not load fixtures. Database is unreachable. Falling back to empty state.", error);
-      return [];
-    }
-  },
-  ["fixtures-page-all"],
-  { revalidate: 30, tags: ["fixtures"] }
-);
-
 export default async function FixturesPage() {
-  const initialMatches = await fetchFixtures();
+  const dbMatches = await getCachedFixtures().catch((error) => {
+    console.error("⚠️ [Prisma] Could not load fixtures. Database is unreachable. Falling back to empty state.", error);
+    return [];
+  });
+
+  const initialMatches = dbMatches.map((m) => ({
+    id: m.id,
+    matchNumber: m.matchNumber,
+    stage: m.stage,
+    groupId: m.groupId,
+    kickoffUtc: new Date(m.kickoffUtc).toISOString(),
+    homeTeam: m.homeTeam,
+    awayTeam: m.awayTeam,
+    homePlaceholder: m.homePlaceholder,
+    awayPlaceholder: m.awayPlaceholder,
+    venue: m.venue,
+    status: m.status,
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+  }));
 
   return (
     <div className="w-full">

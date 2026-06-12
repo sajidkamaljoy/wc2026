@@ -8,6 +8,17 @@ export interface NewsArticle {
   publishedAt: string;
 }
 
+interface GNewsArticle {
+  title: string;
+  url: string;
+  image?: string;
+  source?: {
+    name: string;
+    url?: string;
+  };
+  publishedAt: string;
+}
+
 export async function getWorldCupNews(): Promise<NewsArticle[]> {
   if (!NEWS_API_KEY) {
     // Return mock data if no key is provided
@@ -44,12 +55,13 @@ export async function getWorldCupNews(): Promise<NewsArticle[]> {
     );
     if (!res.ok) throw new Error("Failed to fetch news");
     const data = await res.json();
+    const articles: GNewsArticle[] = data.articles ?? [];
     
-    return data.articles.map((article: any) => ({
+    return articles.map((article: GNewsArticle) => ({
       title: article.title,
       url: article.url,
       image: article.image,
-      source: article.source.name,
+      source: article.source?.name || "News Source",
       publishedAt: article.publishedAt,
     }));
   } catch (error) {
@@ -99,15 +111,13 @@ export async function getTeamNews(teamName: string): Promise<NewsArticle[]> {
     }
     
     const data = await res.json();
-    if (!data.articles) {
-      return [];
-    }
+    const articles: GNewsArticle[] = data.articles;
 
     // De-duplicate articles by normalized title (lowercase, alphanumeric only)
     const seenTitles = new Set<string>();
-    const uniqueArticles: any[] = [];
+    const uniqueArticles: GNewsArticle[] = [];
 
-    for (const article of data.articles) {
+    for (const article of articles) {
       if (!article.title) continue;
       const normalizedTitle = article.title.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
       if (!seenTitles.has(normalizedTitle)) {
@@ -116,7 +126,7 @@ export async function getTeamNews(teamName: string): Promise<NewsArticle[]> {
       }
     }
 
-    return uniqueArticles.map((article: any) => ({
+    return uniqueArticles.map((article: GNewsArticle) => ({
       title: article.title,
       url: article.url,
       image: article.image,

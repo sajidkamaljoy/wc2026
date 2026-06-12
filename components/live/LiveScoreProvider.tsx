@@ -60,8 +60,9 @@ export function LiveScoreProvider({ children }: { children: ReactNode }) {
             applyScores(data.scores);
           }
         }
-      } catch (error: any) {
-        console.warn("⚠️ Failed to poll live scores (network reconnecting/reloading):", error.message || error);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn("⚠️ Failed to poll live scores (network reconnecting/reloading):", message);
       }
     };
     poll();

@@ -5,6 +5,25 @@ import { gradePredictionsForMatch } from "./gradePredictions";
 import { recalculateGroupStandings } from "./standings";
 import { revalidateTag } from "next/cache";
 
+interface FootballDataMatch {
+  id: number;
+  status: string;
+  utcDate: string;
+  minute?: number;
+  homeTeam?: {
+    name: string;
+  };
+  awayTeam?: {
+    name: string;
+  };
+  score?: {
+    fullTime?: {
+      home: number | null;
+      away: number | null;
+    };
+  };
+}
+
 const BASE = process.env.FOOTBALL_DATA_BASE_URL || "https://api.football-data.org/v4";
 const KEY  = process.env.FOOTBALL_DATA_API_KEY || "";
 const COMP = process.env.FOOTBALL_DATA_COMPETITION_ID || "2000";
@@ -28,7 +47,7 @@ export async function getLiveScores(): Promise<LiveScore[]> {
       `/competitions/${COMP}/matches?status=IN_PLAY,PAUSED,FINISHED`
     );
 
-    return (data.matches ?? []).map((m: any): LiveScore => ({
+    return (data.matches ?? []).map((m: FootballDataMatch): LiveScore => ({
       matchId: m.id.toString(), // Note: this is the external ID; map to our DB ID below
       homeScore: m.score?.fullTime?.home ?? null,
       awayScore: m.score?.fullTime?.away ?? null,
@@ -92,7 +111,7 @@ export async function getLiveScoresMapped(): Promise<LiveScore[]> {
     }
 
     const data = await fdFetch(`/competitions/${COMP}/matches?status=IN_PLAY,PAUSED,FINISHED`);
-    const apiMatches: any[] = data.matches ?? [];
+    const apiMatches: FootballDataMatch[] = data.matches ?? [];
     if (apiMatches.length === 0) {
       return [];
     }

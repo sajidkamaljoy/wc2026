@@ -1,24 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { unstable_cache } from "next/cache";
-
-// Cache keyed by sort+stage — revalidates every 30 seconds.
-// Sorting/filtering happens in-memory on the cached result to avoid
-// separate DB queries for every permutation of filters.
-const getAllFixtures = unstable_cache(
-  async () => {
-    return prisma.match.findMany({
-      include: {
-        homeTeam: { select: { id: true, name: true, flagUrl: true } },
-        awayTeam: { select: { id: true, name: true, flagUrl: true } },
-        venue: { select: { name: true, city: true, country: true } },
-      },
-      orderBy: { kickoffUtc: "asc" },
-    });
-  },
-  ["fixtures-all"],
-  { revalidate: 30, tags: ["fixtures"] }
-);
+import { getCachedFixtures } from "@/lib/fixtures";
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,7 +10,7 @@ export async function GET(req: NextRequest) {
     const teamFilter = searchParams.get("team");
 
     // Fetch once from cache — then filter/sort in-memory
-    let matches = await getAllFixtures();
+    let matches = await getCachedFixtures();
 
     // Apply filters in-memory (no extra DB round-trip)
     if (stageFilter) {
@@ -49,7 +30,7 @@ export async function GET(req: NextRequest) {
       matches = [...matches].sort((a, b) => {
         const aName = a.homeTeam?.name ?? a.homePlaceholder ?? "";
         const bName = b.homeTeam?.name ?? b.homePlaceholder ?? "";
-        return aName.localeCompare(bName) || a.kickoffUtc.getTime() - b.kickoffUtc.getTime();
+        return aName.localeCompare(bName) || new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime();
       });
     }
     // Default sort is already by kickoffUtc asc from the DB query

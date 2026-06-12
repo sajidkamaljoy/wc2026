@@ -5,6 +5,7 @@ import type { MatchWithTeams } from "@/types";
 import { useLiveScores } from "./useLiveScores";
 import { Tv, MapPin } from "lucide-react";
 import Link from "next/link";
+import type { APIMatch } from "@/lib/streamed-api";
 
 interface Props {
   matches: MatchWithTeams[];
@@ -14,7 +15,7 @@ export function LiveMatchBanner({ matches = [] }: Props) {
   const [activeMatch, setActiveMatch] = useState<MatchWithTeams | null>(null);
   const [mounted, setMounted] = useState(false);
   const [streamedLiveIds, setStreamedLiveIds] = useState<string[]>([]);
-  const [streamedLiveMatches, setStreamedLiveMatches] = useState<any[]>([]);
+  const [streamedLiveMatches, setStreamedLiveMatches] = useState<APIMatch[]>([]);
   const { scores } = useLiveScores();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

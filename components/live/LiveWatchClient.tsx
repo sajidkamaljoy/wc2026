@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { MatchWithTeams, Stream } from "@/types";
 import {
   Tv,
