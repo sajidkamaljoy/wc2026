@@ -7,6 +7,7 @@ import { PageWrapper } from "@/components/PageWrapper";
 import { LiveScoreProvider } from "@/components/live/LiveScoreProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { Footer } from "@/components/Footer";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -89,6 +90,7 @@ export default function RootLayout({
             <BottomNav />
           </LiveScoreProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
