@@ -180,7 +180,7 @@ export async function getLiveStreamsForMatch(
   }
 }
 
-export async function getLiveMatchesFromStreamed(): Promise<string[]> {
+export async function getLiveMatchesFromStreamed(): Promise<{ matchedIds: string[]; rawLive: APIMatch[] }> {
   try {
     const res = await fetch(`${STREAMED_API_BASE}/matches/live`, {
       next: { revalidate: 30 }, // cache for 30s
@@ -192,7 +192,7 @@ export async function getLiveMatchesFromStreamed(): Promise<string[]> {
 
     const liveMatches: APIMatch[] = await res.json();
     if (!liveMatches || !Array.isArray(liveMatches) || liveMatches.length === 0) {
-      return [];
+      return { matchedIds: [], rawLive: [] };
     }
 
     // Get all matches from DB to compare (include id, name, shortName)
@@ -219,9 +219,54 @@ export async function getLiveMatchesFromStreamed(): Promise<string[]> {
       }
     }
 
-    return matchedIds;
+    return { matchedIds, rawLive: liveMatches };
   } catch (error) {
     console.error("Error in getLiveMatchesFromStreamed:", error);
+    return { matchedIds: [], rawLive: [] };
+  }
+}
+
+export async function getStreamsForStreamedMatchId(streamedId: string): Promise<Stream[]> {
+  try {
+    const res = await fetch(`${STREAMED_API_BASE}/matches/all`, {
+      next: { revalidate: 30 },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch matches from streamed.pk: ${res.status}`);
+    }
+
+    const matches: APIMatch[] = await res.json();
+    if (!matches || !Array.isArray(matches)) {
+      return [];
+    }
+
+    const match = matches.find((m) => m.id === streamedId);
+    if (!match) {
+      console.log(`ℹ️ No streamed.pk match found by ID: ${streamedId}`);
+      return [];
+    }
+
+    // Fetch streams for sources
+    const streamPromises = match.sources.map(async (src) => {
+      try {
+        const streamRes = await fetch(`${STREAMED_API_BASE}/stream/${src.source}/${src.id}`, {
+          next: { revalidate: 30 },
+        });
+
+        if (!streamRes.ok) return [];
+        const streams: Stream[] = await streamRes.json();
+        return Array.isArray(streams) ? streams : [];
+      } catch {
+        return [];
+      }
+    });
+
+    const results = await Promise.all(streamPromises);
+    const allStreams = results.flat();
+    return allStreams.filter((s) => s.embedUrl);
+  } catch (error) {
+    console.error("Error in getStreamsForStreamedMatchId:", error);
     return [];
   }
 }

@@ -21,6 +21,9 @@ interface PageProps {
   searchParams: Promise<{
     matchNumber?: string;
     id?: string;
+    streamedId?: string;
+    streamedTitle?: string;
+    category?: string;
   }>;
 }
 
@@ -28,11 +31,35 @@ export default async function WatchPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const matchId = params.id;
   const matchNumberParam = params.matchNumber ? parseInt(params.matchNumber, 10) : undefined;
+  const streamedId = params.streamedId;
+  const streamedTitle = params.streamedTitle;
+  const category = params.category;
   
   let match = null;
 
   try {
-    if (matchId || matchNumberParam) {
+    if (streamedId) {
+      const title = streamedTitle ? decodeURIComponent(streamedTitle) : "Live Match";
+      const parts = title.split(/\s+vs\s+|\s+-\s+/i);
+      const homeName = parts[0] || "Home Team";
+      const awayName = parts[1] || "Away Team";
+      
+      match = {
+        id: streamedId,
+        matchNumber: 0,
+        stage: "GROUP" as const,
+        groupId: "LIVE",
+        kickoffUtc: new Date().toISOString(),
+        homeTeam: { id: "HOME", name: homeName, flagUrl: null },
+        awayTeam: { id: "AWAY", name: awayName, flagUrl: null },
+        homePlaceholder: null,
+        awayPlaceholder: null,
+        venue: { name: "Live Broadcaster", city: category || "Sports", country: "streamed.pk" },
+        status: "LIVE" as const,
+        homeScore: null,
+        awayScore: null,
+      };
+    } else if (matchId || matchNumberParam) {
       // User explicitly requested a specific match (e.g. by clicking "Watch Live Stream" on a fixture card)
       const whereClause: { id?: string; matchNumber?: number } = {};
       if (matchId) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getLiveStreamsForMatch } from "@/lib/streamed-api";
+import { getLiveStreamsForMatch, getStreamsForStreamedMatchId } from "@/lib/streamed-api";
 
 export async function GET(request: Request) {
   try {
@@ -30,10 +30,10 @@ export async function GET(request: Request) {
       });
 
       if (!dbMatch) {
-        return NextResponse.json(
-          { error: "Match not found" },
-          { status: 404 }
-        );
+        // If the match does not exist in the database, it must be a raw streamed.pk sports event ID!
+        console.log(`ℹ️ Match ID "${matchId}" not found in DB. Attempting raw streamed.pk lookup.`);
+        const streams = await getStreamsForStreamedMatchId(matchId);
+        return NextResponse.json({ streams });
       }
 
       homeInfo = dbMatch.homeTeam
