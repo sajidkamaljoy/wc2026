@@ -120,7 +120,7 @@ export function LiveMatchBanner({ matches = [] }: Props) {
               Match #{activeMatch.matchNumber}
             </span>
           </div>
-          
+
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 mt-1">
             {/* Home Team */}
             <div className="flex items-center gap-1.5">
@@ -129,7 +129,7 @@ export function LiveMatchBanner({ matches = [] }: Props) {
               )}
               <span className="font-extrabold text-sm text-slate-100">{activeMatch.homeTeam?.name}</span>
             </div>
-            
+
             <span className="text-slate-500 font-bold text-xs">vs</span>
 
             {/* Away Team */}
@@ -182,15 +182,10 @@ export function LiveMatchBanner({ matches = [] }: Props) {
               {activeStreamedMatch.category}
             </span>
           </div>
-          
+
           <h3 className="font-extrabold text-sm text-slate-100 mt-1.5 uppercase tracking-wide">
             {activeStreamedMatch.title}
           </h3>
-
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 justify-center md:justify-start mt-0.5">
-            <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-            <span>streamed.pk broadcast</span>
-          </div>
         </div>
 
         {/* Right Column: Action Button */}
@@ -222,7 +217,7 @@ export function LiveMatchBanner({ matches = [] }: Props) {
             Live Broadcast Center
           </span>
         </div>
-        
+
         <h3 className="font-extrabold text-sm text-slate-100 mt-1 uppercase tracking-wide">
           No Live Streams Active
         </h3>
