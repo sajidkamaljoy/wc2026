@@ -117,3 +117,13 @@ export interface BracketPredictionState {
   knockoutPicks: Record<number, string>; // matchNumber -> winnerId
   isSubmitted: boolean;
 }
+
+export interface Stream {
+  id: string;
+  streamNo: number;
+  language: string;
+  hd: boolean;
+  embedUrl: string;
+  source: string;
+}
+

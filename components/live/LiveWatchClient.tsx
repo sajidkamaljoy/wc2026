@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { MatchWithTeams } from "@/types";
+import type { MatchWithTeams, Stream } from "@/types";
 import {
   Tv,
   Flame,
@@ -24,6 +24,13 @@ export function LiveWatchClient({ match }: Props) {
   const [isMuted, setIsMuted] = useState(true);
   const [showMuteTooltip, setShowMuteTooltip] = useState(false);
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Stream states
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [activeStream, setActiveStream] = useState<Stream | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isBackup, setIsBackup] = useState(false);
 
   const handleToggleMute = () => {
     setIsMuted((prev) => !prev);
@@ -55,6 +62,65 @@ export function LiveWatchClient({ match }: Props) {
       if (tooltipTimeoutRef.current) {
         clearTimeout(tooltipTimeoutRef.current);
       }
+    };
+  }, [match.id]);
+
+  // Fetch dynamic streams
+  useEffect(() => {
+    let active = true;
+    const fetchStreams = async () => {
+      setLoading(true);
+      setError(null);
+      setIsBackup(false);
+      try {
+        const res = await fetch(`/api/watch/streams?matchId=${match.id}`);
+        if (!res.ok) throw new Error("Failed to load stream data");
+        const data = await res.json();
+        
+        if (active) {
+          if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
+            setStreams(data.streams);
+            setActiveStream(data.streams[0]);
+          } else {
+            const fallbackStream: Stream = {
+              id: "fallback",
+              streamNo: 1,
+              language: "English",
+              hd: true,
+              embedUrl: "https://embed.st/embed/admin/ppv-mexico-vs-south-africa/1",
+              source: "backup",
+            };
+            setStreams([fallbackStream]);
+            setActiveStream(fallbackStream);
+            setIsBackup(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch match streams:", err);
+        if (active) {
+          const fallbackStream: Stream = {
+            id: "fallback",
+            streamNo: 1,
+            language: "English",
+            hd: true,
+            embedUrl: "https://embed.st/embed/admin/ppv-mexico-vs-south-africa/1",
+            source: "backup",
+          };
+          setStreams([fallbackStream]);
+          setActiveStream(fallbackStream);
+          setIsBackup(true);
+          setError("Failed to fetch stream sources. Loaded backup player.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchStreams();
+    return () => {
+      active = false;
     };
   }, [match.id]);
 
@@ -98,16 +164,32 @@ export function LiveWatchClient({ match }: Props) {
         
         {/* Aspect Ratio Embed */}
         <div className="relative aspect-video w-full bg-slate-950">
-          <iframe
-            title="Mexico vs South Africa Player"
-            marginHeight={0}
-            marginWidth={0}
-            src="https://embed.st/embed/admin/ppv-mexico-vs-south-africa/1"
-            scrolling="no"
-            allowFullScreen={true}
-            allow="autoplay; encrypted-media; picture-in-picture;"
-            className="absolute inset-0 w-full h-full border-0"
-          />
+          {loading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-4">
+              <Tv className="h-12 w-12 animate-pulse text-amber-400" />
+              <span className="text-xs font-bold tracking-wider animate-pulse uppercase text-amber-400/80">
+                Resolving dynamic streams...
+              </span>
+            </div>
+          ) : activeStream ? (
+            <iframe
+              title={`${match.homeTeam?.name || "Home"} vs ${match.awayTeam?.name || "Away"} Player`}
+              marginHeight={0}
+              marginWidth={0}
+              src={activeStream.embedUrl}
+              scrolling="no"
+              allowFullScreen={true}
+              allow="autoplay; encrypted-media; picture-in-picture;"
+              className="absolute inset-0 w-full h-full border-0 animate-fade-in"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-2">
+              <Tv className="h-12 w-12 text-slate-600" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                No Stream Source Found
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Quick Player Bar */}
@@ -138,10 +220,14 @@ export function LiveWatchClient({ match }: Props) {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 font-medium text-slate-300">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              1080p Stream HD
-            </span>
+            {activeStream && (
+              <span className="flex items-center gap-1.5 font-medium text-slate-300 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                <span className={`h-2 w-2 rounded-full ${activeStream.hd ? "bg-emerald-500" : "bg-amber-500"} animate-pulse`} />
+                <span className="uppercase text-[10px] font-black tracking-wider">
+                  {activeStream.language} • {activeStream.hd ? "HD" : "SD"}
+                </span>
+              </span>
+            )}
             <button 
               onClick={() => {
                 const iframe = document.querySelector("iframe");
@@ -161,6 +247,62 @@ export function LiveWatchClient({ match }: Props) {
           </div>
         </div>
       </div>
+
+      {/* ── Dynamic Broadcast Warning / Status ── */}
+      {isBackup && !loading && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in text-center sm:text-left">
+          <div className="space-y-1">
+            <h4 className="font-bold text-amber-400 text-xs flex items-center justify-center sm:justify-start gap-1.5 uppercase tracking-wider">
+              ⚠️ Backup Broadcast Mode
+            </h4>
+            <p className="text-slate-400 text-[11px] max-w-xl leading-relaxed">
+              No live streaming feeds are currently registered on streamed.pk for this match. You are viewing the backup stream.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Broadcast Source Switcher ── */}
+      {streams.length > 1 && (
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-md shadow-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-white text-xs tracking-widest uppercase flex items-center gap-1.5">
+              <Tv className="h-4 w-4 text-amber-400" />
+              Available Broadcast Sources
+            </h3>
+            <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+              {streams.length} feeds found
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {streams.map((stream) => (
+              <button
+                key={stream.id || `${stream.source}-${stream.streamNo}`}
+                onClick={() => setActiveStream(stream)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 cursor-pointer ${
+                  activeStream?.id === stream.id
+                    ? "bg-amber-400 border-amber-500 text-slate-950 font-black shadow-md shadow-amber-400/10 hover:scale-[1.02]"
+                    : "bg-slate-900/60 border-white/5 text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                }`}
+              >
+                <span>{stream.language}</span>
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                  activeStream?.id === stream.id
+                    ? "bg-slate-950/20 text-slate-950"
+                    : "bg-white/10 text-slate-400"
+                }`}>
+                  {stream.hd ? "HD" : "SD"}
+                </span>
+                <span className={`text-[10px] opacity-75 ${
+                  activeStream?.id === stream.id ? "text-slate-950" : "text-slate-500"
+                }`}>
+                  [{stream.source.toUpperCase()}]
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Interactive Cheering Poll ── */}
       <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-md shadow-lg space-y-4">
