@@ -180,6 +180,12 @@ async function main() {
     );
     updated++;
   }
+  
+  if (updated > 0) {
+    console.log("🔄 Recalculating group standings...");
+    const { recalculateGroupStandings } = await import("../lib/standings");
+    await recalculateGroupStandings();
+  }
 
   console.log(
     `\n🏁 Sync complete. Updated: ${updated}, Newly linked: ${linked}, Skipped: ${skipped}`

@@ -2,6 +2,7 @@ import type { LiveScore } from "@/types";
 import { prisma } from "./db";
 import { MatchStatus as DBStatus } from "@prisma/client";
 import { gradePredictionsForMatch } from "./gradePredictions";
+import { recalculateGroupStandings } from "./standings";
 import { revalidateTag } from "next/cache";
 
 const BASE = process.env.FOOTBALL_DATA_BASE_URL || "https://api.football-data.org/v4";
@@ -189,6 +190,7 @@ export async function getLiveScoresMapped(): Promise<LiveScore[]> {
     }
 
     if (dbUpdated) {
+      await recalculateGroupStandings();
       try {
         revalidateTag("fixtures", "max");
       } catch (err) {
