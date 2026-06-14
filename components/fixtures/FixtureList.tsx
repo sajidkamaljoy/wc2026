@@ -5,7 +5,7 @@ import { FixtureFilters } from "./FixtureFilters";
 import { FixtureCard } from "./FixtureCard";
 import { TimezoneBanner } from "../TimezoneBanner";
 import type { MatchWithTeams } from "@/types";
-import { getLocalDateLabel } from "@/lib/timezone";
+import { getLocalDateLabel, isToday } from "@/lib/timezone";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Loader2, Calendar } from "lucide-react";
 
@@ -105,8 +105,18 @@ export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWit
     setVisibleCount(10);
   }, [favoritesOnly]);
 
+  // Sort matches so that today's matches are first, then other matches chronologically
+  const sortedMatches = [...displayedMatches].sort((a, b) => {
+    const aToday = isToday(a.kickoffUtc);
+    const bToday = isToday(b.kickoffUtc);
+    if (aToday && !bToday) return -1;
+    if (!aToday && bToday) return 1;
+    // Otherwise keep chronological order
+    return new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime();
+  });
+
   // Slice matches according to visibleCount for infinite scroll
-  const slicedMatches = displayedMatches.slice(0, visibleCount);
+  const slicedMatches = sortedMatches.slice(0, visibleCount);
 
   // Group by date
   const grouped = groupByDate(slicedMatches);
@@ -144,21 +154,29 @@ export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWit
         </div>
       ) : (
         <div className="space-y-8">
-          {Object.entries(grouped).map(([dateLabel, dayMatches]) => (
-            <div key={dateLabel} className="space-y-3">
-              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400/90 pl-1 border-l-2 border-amber-400 flex items-center gap-2">
-                <span>{dateLabel}</span>
-                <span className="text-[10px] text-slate-500 font-normal">
-                  ({dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"})
-                </span>
-              </h2>
-              <div className="grid gap-3">
-                {dayMatches.map((m) => (
-                  <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
-                ))}
+          {Object.entries(grouped).map(([dateLabel, dayMatches]) => {
+            const isDayToday = dayMatches.length > 0 && isToday(dayMatches[0].kickoffUtc);
+            return (
+              <div key={dateLabel} className="space-y-3">
+                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400/90 pl-1 border-l-2 border-amber-400 flex items-center gap-2">
+                  <span>{dateLabel}</span>
+                  {isDayToday && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-[9px] font-black text-amber-400 uppercase tracking-wider">
+                      Today
+                    </span>
+                  )}
+                  <span className="text-[10px] text-slate-500 font-normal">
+                    ({dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"})
+                  </span>
+                </h2>
+                <div className="grid gap-3">
+                  {dayMatches.map((m) => (
+                    <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Load More Button */}
           {displayedMatches.length > visibleCount && (
