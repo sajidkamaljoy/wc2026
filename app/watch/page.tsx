@@ -114,9 +114,10 @@ export default async function WatchPage({ searchParams }: PageProps) {
           awayTeam: { select: { id: true, name: true, flagUrl: true } },
           venue: { select: { name: true, city: true, country: true } },
         },
-        orderBy: {
-          kickoffUtc: "asc",
-        },
+        orderBy: [
+          { kickoffUtc: "desc" },
+          { matchNumber: "desc" },
+        ],
       });
 
       if (dbMatch) {

@@ -63,27 +63,44 @@ export function LiveMatchBanner({ matches = [] }: Props) {
     if (matches.length === 0) return;
 
     const findActiveMatch = () => {
+      // Helper function to sort matching games by kickoffUtc desc, then matchNumber desc to get the latest one
+      const sortByLatest = (list: MatchWithTeams[]) => {
+        return [...list].sort((a, b) => {
+          const timeDiff = new Date(b.kickoffUtc).getTime() - new Date(a.kickoffUtc).getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return b.matchNumber - a.matchNumber;
+        });
+      };
+
       // 1. Check if there are live matches on streamed.pk first
       if (streamedLiveIds.length > 0) {
-        const found = matches.find((m) => streamedLiveIds.includes(m.id));
-        if (found) return found;
+        const found = matches.filter((m) => streamedLiveIds.includes(m.id));
+        if (found.length > 0) {
+          return sortByLatest(found)[0];
+        }
       }
 
       // 2. Check live scores status next
-      const liveScoreMatch = scores.find((s) => s.status === "LIVE" || s.status === "HALF_TIME");
-      if (liveScoreMatch) {
-        const found = matches.find((m) => m.id === liveScoreMatch.matchId);
-        if (found) return found;
+      const liveScoreIds = scores
+        .filter((s) => s.status === "LIVE" || s.status === "HALF_TIME")
+        .map((s) => s.matchId);
+      if (liveScoreIds.length > 0) {
+        const found = matches.filter((m) => liveScoreIds.includes(m.id));
+        if (found.length > 0) {
+          return sortByLatest(found)[0];
+        }
       }
 
       // 3. Check time window (kickoff has passed, within 2 hours, status is not FINISHED)
       const now = new Date();
-      const timeMatch = matches.find((m) => {
+      const timeMatches = matches.filter((m) => {
         const kickoff = new Date(m.kickoffUtc);
         const end = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000); // 2 hours window
         return now >= kickoff && now <= end && m.status !== "FINISHED";
       });
-      if (timeMatch) return timeMatch;
+      if (timeMatches.length > 0) {
+        return sortByLatest(timeMatches)[0];
+      }
 
       return null;
     };

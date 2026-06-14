@@ -7,7 +7,7 @@ import { PageWrapper } from "@/components/PageWrapper";
 import { LiveScoreProvider } from "@/components/live/LiveScoreProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { Footer } from "@/components/Footer";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({
   subsets: ["latin"],
