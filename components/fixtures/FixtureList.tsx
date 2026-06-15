@@ -7,7 +7,7 @@ import { TimezoneBanner } from "../TimezoneBanner";
 import type { MatchWithTeams } from "@/types";
 import { getLocalDateLabel, isToday } from "@/lib/timezone";
 import { useFavorites } from "@/hooks/useFavorites";
-import { Loader2, Calendar } from "lucide-react";
+import { Loader2, Calendar, ChevronUp, ChevronDown } from "lucide-react";
 
 export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWithTeams[] }) {
   const [matches, setMatches] = useState<MatchWithTeams[]>(initialMatches);
@@ -18,10 +18,16 @@ export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWit
   const [loading, setLoading] = useState(initialMatches.length === 0);
   const [userPredictions, setUserPredictions] = useState<Record<string, { homeScore: number, awayScore: number }>>({});
   
-  const [visibleCount, setVisibleCount] = useState<number>(10);
+  const [mounted, setMounted] = useState(false);
+  const [visiblePreviousCount, setVisiblePreviousCount] = useState<number>(0);
+  const [visibleNextCount, setVisibleNextCount] = useState<number>(0);
 
   const { favorites, isLoaded: favoritesLoaded } = useFavorites();
   const isFirstMount = useRef(true);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load the list of teams once on mount
   useEffect(() => {
@@ -59,7 +65,8 @@ export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWit
 
     let active = true;
     setLoading(true);
-    setVisibleCount(10);
+    setVisiblePreviousCount(0);
+    setVisibleNextCount(0);
 
     const params = new URLSearchParams({ sort: "date" });
     if (stageFilter) {
@@ -102,24 +109,61 @@ export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWit
 
   // Reset scroll page whenever favorites filter changes
   useEffect(() => {
-    setVisibleCount(10);
+    setVisiblePreviousCount(0);
+    setVisibleNextCount(0);
   }, [favoritesOnly]);
 
-  // Sort matches so that today's matches are first, then other matches chronologically
-  const sortedMatches = [...displayedMatches].sort((a, b) => {
-    const aToday = isToday(a.kickoffUtc);
-    const bToday = isToday(b.kickoffUtc);
-    if (aToday && !bToday) return -1;
-    if (!aToday && bToday) return 1;
-    // Otherwise keep chronological order
-    return new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime();
+  // Sort matches chronologically
+  const chronMatches = [...displayedMatches].sort(
+    (a, b) => new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime()
+  );
+
+  const userTZ = typeof window !== "undefined"
+    ? Intl.DateTimeFormat().resolvedOptions().timeZone
+    : "UTC";
+
+  const todayStr = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: userTZ,
+  }).format(new Date());
+
+  const previousMatches: MatchWithTeams[] = [];
+  const todayMatches: MatchWithTeams[] = [];
+  const nextMatches: MatchWithTeams[] = [];
+
+  chronMatches.forEach((m) => {
+    const matchStr = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric", month: "2-digit", day: "2-digit",
+      timeZone: userTZ,
+    }).format(new Date(m.kickoffUtc));
+
+    if (matchStr === todayStr) {
+      todayMatches.push(m);
+    } else if (matchStr < todayStr) {
+      previousMatches.push(m);
+    } else {
+      nextMatches.push(m);
+    }
   });
 
-  // Slice matches according to visibleCount for infinite scroll
-  const slicedMatches = sortedMatches.slice(0, visibleCount);
+  const slicedPrevious = visiblePreviousCount === 0
+    ? []
+    : previousMatches.slice(-visiblePreviousCount);
 
-  // Group by date
-  const grouped = groupByDate(slicedMatches);
+  const slicedNext = nextMatches.slice(0, visibleNextCount);
+
+  const groupedPrevious = groupByDate(slicedPrevious);
+  const groupedToday = groupByDate(todayMatches);
+  const groupedNext = groupByDate(slicedNext);
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+        <span className="text-sm font-medium tracking-wide">Loading tournament fixtures…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -154,42 +198,144 @@ export function FixtureList({ initialMatches = [] }: { initialMatches?: MatchWit
         </div>
       ) : (
         <div className="space-y-8">
-          {Object.entries(grouped).map(([dateLabel, dayMatches]) => {
-            const isDayToday = dayMatches.length > 0 && isToday(dayMatches[0].kickoffUtc);
-            return (
-              <div key={dateLabel} className="space-y-3">
-                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400/90 pl-1 border-l-2 border-amber-400 flex items-center gap-2">
-                  <span>{dateLabel}</span>
-                  {isDayToday && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-[9px] font-black text-amber-400 uppercase tracking-wider">
+          {/* Previous Matches Control */}
+          {previousMatches.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-slate-950/40 border border-white/5 rounded-2xl p-4 backdrop-blur-md">
+              {visiblePreviousCount < previousMatches.length ? (
+                <button
+                  onClick={() => setVisiblePreviousCount(prev => Math.min(prev + 5, previousMatches.length))}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-slate-900 hover:bg-slate-800 text-sm font-semibold text-slate-200 hover:text-white transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg active:scale-95 active:duration-75 group"
+                >
+                  <ChevronUp className="h-4 w-4 text-amber-400 group-hover:-translate-y-0.5 transition-transform" />
+                  <span>
+                    {visiblePreviousCount === 0 ? "Show Previous Matches" : "Show 5 More Previous Matches"}
+                  </span>
+                  <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full group-hover:bg-slate-700 transition-colors">
+                    ({previousMatches.length - visiblePreviousCount} remaining)
+                  </span>
+                </button>
+              ) : (
+                <span className="text-xs text-slate-500 font-medium">All previous matches shown</span>
+              )}
+
+              {visiblePreviousCount > 0 && (
+                <button
+                  onClick={() => setVisiblePreviousCount(0)}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-200 underline underline-offset-4 decoration-slate-600 hover:decoration-slate-400 cursor-pointer transition-colors"
+                >
+                  Collapse Past Matches
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Previous Matches List */}
+          {visiblePreviousCount > 0 && Object.keys(groupedPrevious).length > 0 && (
+            <div className="space-y-8 border-b border-white/5 pb-8">
+              {Object.entries(groupedPrevious).map(([dateLabel, dayMatches]) => (
+                <div key={dateLabel} className="space-y-3 animate-fade-in">
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400/90 pl-1 border-l-2 border-slate-500 flex items-center gap-2">
+                    <span>{dateLabel}</span>
+                    <span className="text-[10px] text-slate-500 font-normal">
+                      ({dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"})
+                    </span>
+                  </h2>
+                  <div className="grid gap-3">
+                    {dayMatches.map((m) => (
+                      <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Today's Matches List / Placeholder */}
+          <div className="space-y-3">
+            {todayMatches.length > 0 ? (
+              Object.entries(groupedToday).map(([dateLabel, dayMatches]) => (
+                <div key={dateLabel} className="space-y-3">
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400 pl-1 border-l-2 border-amber-400 flex items-center gap-2">
+                    <span>{dateLabel}</span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-[9px] font-black text-amber-400 uppercase tracking-wider animate-pulse">
                       Today
                     </span>
-                  )}
-                  <span className="text-[10px] text-slate-500 font-normal">
-                    ({dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"})
+                    <span className="text-[10px] text-slate-500 font-normal">
+                      ({dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"})
+                    </span>
+                  </h2>
+                  <div className="grid gap-3">
+                    {dayMatches.map((m) => (
+                      <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-3">
+                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400 pl-1 border-l-2 border-amber-400 flex items-center gap-2">
+                  <span>{getLocalDateLabel(new Date().toISOString())}</span>
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-[9px] font-black text-amber-400 uppercase tracking-wider animate-pulse">
+                    Today
                   </span>
                 </h2>
-                <div className="grid gap-3">
-                  {dayMatches.map((m) => (
-                    <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
-                  ))}
+                <div className="flex flex-col items-center justify-center py-8 gap-2.5 text-slate-400 border border-dashed border-white/5 rounded-2xl bg-slate-900/10">
+                  <Calendar className="h-5 w-5 text-slate-500" />
+                  <span className="text-xs font-semibold text-slate-400">No matches scheduled for today</span>
                 </div>
               </div>
-            );
-          })}
+            )}
+          </div>
 
-          {/* Load More Button */}
-          {displayedMatches.length > visibleCount && (
-            <div className="flex justify-center pt-8">
-              <button
-                onClick={() => setVisibleCount((prev) => Math.min(prev + 10, displayedMatches.length))}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.99] active:duration-75"
-              >
-                <span>Load More Matches</span>
-                <span className="text-xs font-normal text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-200">
-                  ({displayedMatches.length - visibleCount} remaining)
-                </span>
-              </button>
+          {/* Next Matches List */}
+          {visibleNextCount > 0 && Object.keys(groupedNext).length > 0 && (
+            <div className="space-y-8 border-t border-white/5 pt-8">
+              {Object.entries(groupedNext).map(([dateLabel, dayMatches]) => (
+                <div key={dateLabel} className="space-y-3 animate-fade-in">
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400/90 pl-1 border-l-2 border-slate-500 flex items-center gap-2">
+                    <span>{dateLabel}</span>
+                    <span className="text-[10px] text-slate-500 font-normal">
+                      ({dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"})
+                    </span>
+                  </h2>
+                  <div className="grid gap-3">
+                    {dayMatches.map((m) => (
+                      <FixtureCard key={m.id} match={m} userPrediction={userPredictions[m.id]} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Next Matches Control */}
+          {nextMatches.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-slate-950/40 border border-white/5 rounded-2xl p-4 backdrop-blur-md">
+              {visibleNextCount < nextMatches.length ? (
+                <button
+                  onClick={() => setVisibleNextCount(prev => Math.min(prev + 5, nextMatches.length))}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-slate-900 hover:bg-slate-800 text-sm font-semibold text-slate-200 hover:text-white transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg active:scale-95 active:duration-75 group"
+                >
+                  <ChevronDown className="h-4 w-4 text-amber-400 group-hover:translate-y-0.5 transition-transform" />
+                  <span>
+                    {visibleNextCount === 0 ? "Show Next Matches" : "Show 5 More Next Matches"}
+                  </span>
+                  <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full group-hover:bg-slate-700 transition-colors">
+                    ({nextMatches.length - visibleNextCount} remaining)
+                  </span>
+                </button>
+              ) : (
+                <span className="text-xs text-slate-500 font-medium">All next matches shown</span>
+              )}
+
+              {visibleNextCount > 0 && (
+                <button
+                  onClick={() => setVisibleNextCount(0)}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-200 underline underline-offset-4 decoration-slate-600 hover:decoration-slate-400 cursor-pointer transition-colors"
+                >
+                  Collapse Future Matches
+                </button>
+              )}
             </div>
           )}
         </div>
