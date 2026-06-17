@@ -95,7 +95,7 @@ describe("FixtureList - Today's Match Priority", () => {
     vi.restoreAllMocks();
   });
 
-  it("should sort today's matches first, even if other matches are chronologically earlier", async () => {
+  it("should focus today's matches by default and collapse previous/next matches, allowing them to be uncollapsed", async () => {
     const { container } = render(<FixtureList initialMatches={mockMatches} />);
 
     // Fast-forward mount timers
@@ -103,17 +103,32 @@ describe("FixtureList - Today's Match Priority", () => {
       vi.runOnlyPendingTimers();
     });
 
+    // By default, only today's matches should be shown
     const h2Elements = container.querySelectorAll("h2");
-    expect(h2Elements.length).toBeGreaterThan(0);
-
-    // First group header should be Monday, 15 June 2026 (Today)
+    expect(h2Elements.length).toBe(1);
     expect(h2Elements[0].textContent).toContain("15 June 2026");
     expect(h2Elements[0].textContent).toContain("Today");
 
-    // Second group header should be Thursday, 11 June 2026
-    expect(h2Elements[1].textContent).toContain("11 June 2026");
+    // Check that previous/next matches are not displayed initially
+    expect(container.textContent).not.toContain("11 June 2026");
+    expect(container.textContent).not.toContain("16 June 2026");
 
-    // Third group header should be Tuesday, 16 June 2026
-    expect(h2Elements[2].textContent).toContain("16 June 2026");
+    // Uncollapse previous matches
+    const showPrevButton = screen.getByText(/Show Previous Matches/i);
+    await act(async () => {
+      showPrevButton.click();
+    });
+
+    // Now previous matches header should be present
+    expect(container.textContent).toContain("11 June 2026");
+
+    // Uncollapse next matches
+    const showNextButton = screen.getByText(/Show Next Matches/i);
+    await act(async () => {
+      showNextButton.click();
+    });
+
+    // Now next matches header should be present
+    expect(container.textContent).toContain("16 June 2026");
   });
 });

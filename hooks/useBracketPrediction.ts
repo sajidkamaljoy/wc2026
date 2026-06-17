@@ -7,6 +7,14 @@ export interface Team {
   id: string;
   name: string;
   flagUrl: string | null;
+  played?: number;
+  won?: number;
+  drawn?: number;
+  lost?: number;
+  goalsFor?: number;
+  goalsAgainst?: number;
+  points?: number;
+  goalDiff?: number;
 }
 
 export interface Group {
@@ -138,6 +146,35 @@ export function useBracketPrediction() {
     
     // Cascading effect: modifying group standings invalidates ALL knockout picks
     // because team pathways are recalculated
+    const nextPicks = {};
+    setKnockoutPicks(nextPicks);
+    setIsSubmitted(false);
+    saveToStorage(nextRankings, thirdPlaces, nextPicks);
+  };
+
+  // Sync a single group's rankings with the current actual DB standings
+  const syncGroupWithStandings = (groupId: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
+    const sortedIds = group.teams.map((t) => t.id);
+
+    const nextRankings = { ...groupRankings, [groupId]: sortedIds };
+    setGroupRankings(nextRankings);
+
+    const nextPicks = {};
+    setKnockoutPicks(nextPicks);
+    setIsSubmitted(false);
+    saveToStorage(nextRankings, thirdPlaces, nextPicks);
+  };
+
+  // Sync all groups' rankings with the current actual DB standings
+  const syncAllGroupsWithStandings = () => {
+    const nextRankings = { ...groupRankings };
+    for (const g of groups) {
+      nextRankings[g.id] = g.teams.map((t) => t.id);
+    }
+    setGroupRankings(nextRankings);
+
     const nextPicks = {};
     setKnockoutPicks(nextPicks);
     setIsSubmitted(false);
@@ -394,6 +431,8 @@ export function useBracketPrediction() {
     knockoutPicks,
     knockoutMatches,
     rankTeam,
+    syncGroupWithStandings,
+    syncAllGroupsWithStandings,
     toggleThirdPlace,
     pickWinner,
     resetBracket,
