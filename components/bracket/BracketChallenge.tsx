@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Share2,
   Image,
+  RefreshCw,
 } from "lucide-react";
 
 export function BracketChallenge() {
@@ -27,6 +28,8 @@ export function BracketChallenge() {
     knockoutPicks,
     knockoutMatches,
     rankTeam,
+    syncGroupWithStandings,
+    syncAllGroupsWithStandings,
     toggleThirdPlace,
     pickWinner,
     resetBracket,
@@ -71,6 +74,37 @@ export function BracketChallenge() {
     setCopiedShare(true);
     setTimeout(() => setCopiedShare(false), 2000);
   };
+
+  // Sort the 12 third-place teams based on their current group results/standings in the database
+  const sortedThirdPlaceTeams = useMemo(() => {
+    const list = groups.map((group) => {
+      const thirdPlaceTeamId = groupRankings[group.id]?.[2];
+      const thirdPlaceTeam = group.teams.find((t) => t.id === thirdPlaceTeamId);
+      return {
+        group,
+        thirdPlaceTeam,
+        isSelected: thirdPlaces.includes(group.id),
+      };
+    });
+
+    const filtered = list.filter((item): item is { group: typeof list[0]["group"]; thirdPlaceTeam: NonNullable<typeof list[0]["thirdPlaceTeam"]>; isSelected: boolean } => !!item.thirdPlaceTeam);
+
+    return filtered.sort((a, b) => {
+      const pA = a.thirdPlaceTeam.points ?? 0;
+      const pB = b.thirdPlaceTeam.points ?? 0;
+      if (pB !== pA) return pB - pA;
+
+      const gdA = (a.thirdPlaceTeam.goalsFor ?? 0) - (a.thirdPlaceTeam.goalsAgainst ?? 0);
+      const gdB = (b.thirdPlaceTeam.goalsFor ?? 0) - (b.thirdPlaceTeam.goalsAgainst ?? 0);
+      if (gdB !== gdA) return gdB - gdA;
+
+      const gfA = a.thirdPlaceTeam.goalsFor ?? 0;
+      const gfB = b.thirdPlaceTeam.goalsFor ?? 0;
+      if (gfB !== gfA) return gfB - gfA;
+
+      return a.thirdPlaceTeam.name.localeCompare(b.thirdPlaceTeam.name);
+    });
+  }, [groups, groupRankings, thirdPlaces]);
 
   // Calculate overall percentage
   const totalSteps = 12 + 8 + totalKnockoutMatches; // 12 groups ranked + 8 thirds selected + 32 matches predicted = 52 steps
@@ -122,6 +156,13 @@ export function BracketChallenge() {
 
         <div className="flex flex-row md:flex-col gap-3 justify-end items-center md:items-stretch">
           <button
+            onClick={syncAllGroupsWithStandings}
+            className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10 hover:text-white transition-all cursor-pointer grow text-center flex items-center justify-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync Live Standings
+          </button>
+          <button
             onClick={resetBracket}
             className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer grow text-center animate-fade-in"
           >
@@ -164,13 +205,26 @@ export function BracketChallenge() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {groups.map((group) => {
               const rankings = groupRankings[group.id] || [];
+              const isGroupSynced = JSON.stringify(rankings) === JSON.stringify(group.teams.map((t) => t.id));
               return (
                 <div
                   key={group.id}
                   className="flex flex-col bg-slate-900/30 rounded-2xl border border-white/5 p-4 backdrop-blur-sm"
                 >
-                  <div className="text-base font-extrabold text-amber-400 mb-4 border-b border-white/5 pb-2 uppercase tracking-wide">
-                    {group.name}
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-4">
+                    <span className="text-base font-extrabold text-amber-400 uppercase tracking-wide">
+                      {group.name}
+                    </span>
+                    {!isGroupSynced && (
+                      <button
+                        onClick={() => syncGroupWithStandings(group.id)}
+                        className="text-[10px] font-bold text-slate-400 hover:text-amber-400 flex items-center gap-1 bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-all cursor-pointer"
+                        title="Reset to current standings"
+                      >
+                        <RefreshCw className="h-3 w-3 animate-pulse" />
+                        Sync Standings
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -254,23 +308,26 @@ export function BracketChallenge() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {groups.map((group) => {
-                const thirdPlaceTeamId = groupRankings[group.id]?.[2];
-                const thirdPlaceTeam = group.teams.find((t) => t.id === thirdPlaceTeamId);
-                const isSelected = thirdPlaces.includes(group.id);
-                
-                if (!thirdPlaceTeam) return null;
-
+              {sortedThirdPlaceTeams.map(({ group, thirdPlaceTeam, isSelected }, idx) => {
                 return (
                   <button
                     key={group.id}
                     onClick={() => toggleThirdPlace(group.id)}
-                    className={`flex flex-col items-center gap-3 p-4 rounded-2xl border text-center transition-all cursor-pointer ${
+                    className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl border text-center transition-all cursor-pointer relative ${
                       isSelected
                         ? "border-amber-400 bg-amber-400/5 shadow-md shadow-amber-500/5"
                         : "border-white/5 bg-slate-900/30 hover:border-white/10 hover:bg-slate-900/60"
                     }`}
                   >
+                    {/* Rank Badge */}
+                    <span className={`absolute top-2 left-2 w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${
+                      idx < 8
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 animate-pulse"
+                        : "bg-slate-800 text-slate-500"
+                    }`} title={idx < 8 ? "Currently Qualifying Zone" : "Currently Out"}>
+                      {idx + 1}
+                    </span>
+
                     <span className="text-[10px] uppercase font-extrabold text-slate-500 tracking-wider">
                       Group {group.id} 3rd
                     </span>
@@ -283,9 +340,15 @@ export function BracketChallenge() {
                       />
                     )}
 
-                    <span className="text-sm font-bold text-slate-200">
-                      {thirdPlaceTeam.name}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold text-slate-200">
+                        {thirdPlaceTeam.name}
+                      </span>
+                      {/* Standings info */}
+                      <span className="text-[10px] text-slate-400 font-semibold font-mono">
+                        {thirdPlaceTeam.points ?? 0} pts | {((thirdPlaceTeam.goalsFor ?? 0) - (thirdPlaceTeam.goalsAgainst ?? 0)) >= 0 ? "+" : ""}{((thirdPlaceTeam.goalsFor ?? 0) - (thirdPlaceTeam.goalsAgainst ?? 0))} GD
+                      </span>
+                    </div>
 
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       isSelected

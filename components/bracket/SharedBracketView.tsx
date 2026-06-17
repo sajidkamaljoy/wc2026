@@ -17,6 +17,14 @@ interface Team {
   id: string;
   name: string;
   flagUrl: string | null;
+  played?: number;
+  won?: number;
+  drawn?: number;
+  lost?: number;
+  goalsFor?: number;
+  goalsAgainst?: number;
+  points?: number;
+  goalDiff?: number;
 }
 
 interface Group {
@@ -142,6 +150,37 @@ export function SharedBracketView({ prediction, groups }: Props) {
     if (!winnerId) return null;
     return teamsMap.get(winnerId) || null;
   }, [knockoutPicks, teamsMap]);
+
+  // Sort the 12 third-place teams based on their current group results/standings in the database
+  const sortedThirdPlaceTeams = useMemo(() => {
+    const list = groups.map((group) => {
+      const thirdPlaceTeamId = groupRankings[group.id]?.[2];
+      const thirdPlaceTeam = group.teams.find((t) => t.id === thirdPlaceTeamId);
+      return {
+        group,
+        thirdPlaceTeam,
+        isSelected: thirdPlaces.includes(group.id),
+      };
+    });
+
+    const filtered = list.filter((item): item is { group: typeof list[0]["group"]; thirdPlaceTeam: NonNullable<typeof list[0]["thirdPlaceTeam"]>; isSelected: boolean } => !!item.thirdPlaceTeam);
+
+    return filtered.sort((a, b) => {
+      const pA = a.thirdPlaceTeam.points ?? 0;
+      const pB = b.thirdPlaceTeam.points ?? 0;
+      if (pB !== pA) return pB - pA;
+
+      const gdA = (a.thirdPlaceTeam.goalsFor ?? 0) - (a.thirdPlaceTeam.goalsAgainst ?? 0);
+      const gdB = (b.thirdPlaceTeam.goalsFor ?? 0) - (b.thirdPlaceTeam.goalsAgainst ?? 0);
+      if (gdB !== gdA) return gdB - gdA;
+
+      const gfA = a.thirdPlaceTeam.goalsFor ?? 0;
+      const gfB = b.thirdPlaceTeam.goalsFor ?? 0;
+      if (gfB !== gfA) return gfB - gfA;
+
+      return a.thirdPlaceTeam.name.localeCompare(b.thirdPlaceTeam.name);
+    });
+  }, [groups, groupRankings, thirdPlaces]);
 
   const copyLink = () => {
     if (typeof window !== "undefined") {
@@ -437,22 +476,25 @@ export function SharedBracketView({ prediction, groups }: Props) {
         {activeTab === "wildcard" && (
           <div className="flex flex-col gap-6 max-w-3xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {groups.map((group) => {
-                const thirdPlaceTeamId = groupRankings[group.id]?.[2];
-                const thirdPlaceTeam = group.teams.find((t) => t.id === thirdPlaceTeamId);
-                const isSelected = thirdPlaces.includes(group.id);
-
-                if (!thirdPlaceTeam) return null;
-
+              {sortedThirdPlaceTeams.map(({ group, thirdPlaceTeam, isSelected }, idx) => {
                 return (
                   <div
                     key={group.id}
-                    className={`flex flex-col items-center gap-3 p-4 rounded-2xl border text-center ${
+                    className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl border text-center relative ${
                       isSelected
                         ? "border-amber-400 bg-amber-400/5 shadow-md shadow-amber-500/5"
                         : "border-white/5 bg-slate-900/30"
                     }`}
                   >
+                    {/* Rank Badge */}
+                    <span className={`absolute top-2 left-2 w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${
+                      idx < 8
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
+                        : "bg-slate-800 text-slate-500"
+                    }`} title={idx < 8 ? "Qualifying Zone" : "Out"}>
+                      {idx + 1}
+                    </span>
+
                     <span className="text-[10px] uppercase font-extrabold text-slate-500 tracking-wider">
                       Group {group.id} 3rd
                     </span>
@@ -465,9 +507,15 @@ export function SharedBracketView({ prediction, groups }: Props) {
                       />
                     )}
 
-                    <span className="text-sm font-bold text-slate-200">
-                      {thirdPlaceTeam.name}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold text-slate-200">
+                        {thirdPlaceTeam.name}
+                      </span>
+                      {/* Standings info */}
+                      <span className="text-[10px] text-slate-400 font-semibold font-mono">
+                        {thirdPlaceTeam.points ?? 0} pts | {((thirdPlaceTeam.goalsFor ?? 0) - (thirdPlaceTeam.goalsAgainst ?? 0)) >= 0 ? "+" : ""}{((thirdPlaceTeam.goalsFor ?? 0) - (thirdPlaceTeam.goalsAgainst ?? 0))} GD
+                      </span>
+                    </div>
 
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       isSelected
