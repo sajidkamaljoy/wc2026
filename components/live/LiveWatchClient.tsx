@@ -158,7 +158,8 @@ export function LiveWatchClient({ match }: Props) {
               src={activeStream.embedUrl}
               scrolling="no"
               allowFullScreen={true}
-              allow="autoplay; encrypted-media; picture-in-picture;"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen;"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-pointer-lock allow-top-navigation-by-user-activation allow-presentation"
               className="absolute inset-0 w-full h-full border-0 animate-fade-in"
             />
           ) : (
