@@ -87,17 +87,6 @@ export function LiveMatchBanner({ matches = [] }: Props) {
         }
       }
 
-      // 3. Check time window (kickoff has passed, within 2 hours, status is not FINISHED)
-      const now = new Date();
-      const timeMatches = matches.filter((m) => {
-        const kickoff = new Date(m.kickoffUtc);
-        const end = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000); // 2 hours window
-        return now >= kickoff && now <= end && m.status !== "FINISHED";
-      });
-      if (timeMatches.length > 0) {
-        return sortByLatest(timeMatches)[0];
-      }
-
       return null;
     };
 
