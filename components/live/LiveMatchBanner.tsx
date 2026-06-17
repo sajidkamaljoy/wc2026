@@ -5,7 +5,7 @@ import type { MatchWithTeams } from "@/types";
 import { useLiveScores } from "./useLiveScores";
 import { Tv, MapPin } from "lucide-react";
 import Link from "next/link";
-import type { APIMatch } from "@/lib/streamed-api";
+
 
 interface Props {
   matches: MatchWithTeams[];
@@ -15,7 +15,6 @@ export function LiveMatchBanner({ matches = [] }: Props) {
   const [activeMatch, setActiveMatch] = useState<MatchWithTeams | null>(null);
   const [mounted, setMounted] = useState(false);
   const [streamedLiveIds, setStreamedLiveIds] = useState<string[]>([]);
-  const [streamedLiveMatches, setStreamedLiveMatches] = useState<APIMatch[]>([]);
   const { scores } = useLiveScores();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,9 +39,6 @@ export function LiveMatchBanner({ matches = [] }: Props) {
         if (active) {
           if (data.liveMatchIds && Array.isArray(data.liveMatchIds)) {
             setStreamedLiveIds(data.liveMatchIds);
-          }
-          if (data.streamedLiveMatches && Array.isArray(data.streamedLiveMatches)) {
-            setStreamedLiveMatches(data.streamedLiveMatches);
           }
         }
       } catch (err) {
@@ -176,46 +172,6 @@ export function LiveMatchBanner({ matches = [] }: Props) {
     );
   }
 
-  // Render first available live sports stream from streamed.pk for testing
-  const activeStreamedMatch = streamedLiveMatches.length > 0 ? streamedLiveMatches[0] : null;
-
-  if (activeStreamedMatch) {
-    return (
-      <div className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-slate-900/60 p-4 md:p-5 backdrop-blur-md shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-l-amber-500 animate-fade-in mb-8">
-        {/* Background glow overlay */}
-        <div className="absolute -inset-px -z-10 bg-gradient-to-tr from-amber-500/5 via-transparent to-transparent opacity-50 blur-lg rounded-2xl" />
-
-        {/* Left Column: Match Details */}
-        <div className="flex flex-col gap-1 text-center md:text-left">
-          <div className="flex items-center gap-2 justify-center md:justify-start">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-[9px] font-bold text-red-400 uppercase tracking-widest animate-pulse">
-              <span className="relative flex h-1.5 w-1.5 mr-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
-              </span>
-              Live Now
-            </span>
-            <span className="text-[9px] bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded text-amber-400 font-extrabold uppercase tracking-widest">
-              {activeStreamedMatch.category}
-            </span>
-          </div>
-
-          <h3 className="font-extrabold text-sm text-slate-100 mt-1.5 uppercase tracking-wide">
-            {activeStreamedMatch.title}
-          </h3>
-        </div>
-
-        {/* Right Column: Action Button */}
-        <Link
-          href={`/watch?streamedId=${activeStreamedMatch.id}&streamedTitle=${encodeURIComponent(activeStreamedMatch.title)}&category=${activeStreamedMatch.category}`}
-          className="px-5 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-md bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-400 hover:to-rose-500 text-white shrink-0 hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Tv className="h-3.5 w-3.5 animate-pulse" />
-          <span>Watch Live Stream</span>
-        </Link>
-      </div>
-    );
-  }
 
   // Standby Offline Placeholder
   return (
