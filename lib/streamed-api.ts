@@ -204,6 +204,8 @@ export async function getLiveMatchesFromStreamed(): Promise<{ matchedIds: string
     });
 
     const matchedIds: string[] = [];
+    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+
     for (const apiMatch of liveMatches) {
       const match = dbMatches.find((m) => {
         const homeInfo = m.homeTeam 
@@ -212,7 +214,19 @@ export async function getLiveMatchesFromStreamed(): Promise<{ matchedIds: string
         const awayInfo = m.awayTeam 
           ? { id: m.awayTeam.id, name: m.awayTeam.name, shortName: m.awayTeam.shortName }
           : { id: "", name: m.awayPlaceholder || "" };
-        return matchTeams(apiMatch, homeInfo, awayInfo);
+
+        // Team names must match
+        if (!matchTeams(apiMatch, homeInfo, awayInfo)) return false;
+
+        // Kickoff time must be within ±4 hours of our DB fixture (avoids
+        // matching a same-named fixture from a completely different competition)
+        if (apiMatch.date) {
+          const apiDateMs = apiMatch.date * 1000; // streamed.pk uses Unix seconds
+          const kickoffMs = new Date(m.kickoffUtc).getTime();
+          if (Math.abs(apiDateMs - kickoffMs) > FOUR_HOURS_MS) return false;
+        }
+
+        return true;
       });
       if (match) {
         matchedIds.push(match.id);

@@ -23,7 +23,7 @@ export function LiveWatchClient({ match }: Props) {
   const [activeStream, setActiveStream] = useState<Stream | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isBackup, setIsBackup] = useState(false);
+
 
   // Load initial cheer state on mount
   useEffect(() => {
@@ -50,45 +50,26 @@ export function LiveWatchClient({ match }: Props) {
     const fetchStreams = async () => {
       setLoading(true);
       setError(null);
-      setIsBackup(false);
       try {
         const res = await fetch(`/api/watch/streams?matchId=${match.id}`);
         if (!res.ok) throw new Error("Failed to load stream data");
         const data = await res.json();
-        
+
         if (active) {
           if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
             setStreams(data.streams);
             setActiveStream(data.streams[0]);
           } else {
-            const fallbackStream: Stream = {
-              id: "fallback",
-              streamNo: 1,
-              language: "English",
-              hd: true,
-              embedUrl: "https://embed.st/embed/admin/ppv-mexico-vs-south-africa/1",
-              source: "backup",
-            };
-            setStreams([fallbackStream]);
-            setActiveStream(fallbackStream);
-            setIsBackup(true);
+            setStreams([]);
+            setActiveStream(null);
           }
         }
       } catch (err) {
         console.error("Failed to fetch match streams:", err);
         if (active) {
-          const fallbackStream: Stream = {
-            id: "fallback",
-            streamNo: 1,
-            language: "English",
-            hd: true,
-            embedUrl: "https://embed.st/embed/admin/ppv-mexico-vs-south-africa/1",
-            source: "backup",
-          };
-          setStreams([fallbackStream]);
-          setActiveStream(fallbackStream);
-          setIsBackup(true);
-          setError("Failed to fetch stream sources. Loaded backup player.");
+          setStreams([]);
+          setActiveStream(null);
+          setError("Failed to fetch stream sources. No live stream is currently available for this match.");
         }
       } finally {
         if (active) {
@@ -158,7 +139,7 @@ export function LiveWatchClient({ match }: Props) {
               src={activeStream.embedUrl}
               scrolling="no"
               allowFullScreen={true}
-              allow="autoplay; encrypted-media; picture-in-picture;"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen;"
               className="absolute inset-0 w-full h-full border-0 animate-fade-in"
             />
           ) : (
@@ -206,17 +187,12 @@ export function LiveWatchClient({ match }: Props) {
         </div>
       </div>
 
-      {/* ── Dynamic Broadcast Warning / Status ── */}
-      {isBackup && !loading && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in text-center sm:text-left">
-          <div className="space-y-1">
-            <h4 className="font-bold text-amber-400 text-xs flex items-center justify-center sm:justify-start gap-1.5 uppercase tracking-wider">
-              ⚠️ Backup Broadcast Mode
-            </h4>
-            <p className="text-slate-400 text-[11px] max-w-xl leading-relaxed">
-              No live streaming feeds are currently registered on streamed.pk for this match. You are viewing the backup stream.
-            </p>
-          </div>
+      {/* ── No Stream Available Notice ── */}
+      {!loading && !activeStream && !error && (
+        <div className="rounded-2xl border border-slate-700/40 bg-slate-900/40 p-4 flex items-center gap-3 animate-fade-in">
+          <span className="text-slate-500 text-[11px] leading-relaxed">
+            No live stream is currently available for this World Cup match. Check back closer to kick-off.
+          </span>
         </div>
       )}
 
