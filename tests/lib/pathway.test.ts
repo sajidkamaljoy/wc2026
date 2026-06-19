@@ -49,21 +49,21 @@ describe("calculatePathway", () => {
     
     // R32 (Round of 32)
     expect(result.rounds[0].round).toBe("ROUND_OF_32");
-    expect(result.rounds[0].bracketSlot).toBe("R32-M1"); // Group A, Pos 1 maps to R32-M1
-    expect(result.rounds[0].possibleOpponents).toEqual(["3rd Place from Groups C, D, or E"]);
+    expect(result.rounds[0].bracketSlot).toBe("R32-M7"); // Group A, Pos 1 maps to R32-M7
+    expect(result.rounds[0].possibleOpponents).toEqual(["3rd Place from Groups C, E, F, H, or I"]);
 
     // R16 (Round of 16)
     expect(result.rounds[1].round).toBe("ROUND_OF_16");
-    expect(result.rounds[1].bracketSlot).toBe("R16-M1"); // R32-M1 maps to R16-M1
-    expect(result.rounds[1].possibleOpponents).toContain("Winner R32-M1");
+    expect(result.rounds[1].bracketSlot).toBe("R16-M4"); // R32-M7 maps to R16-M4
+    expect(result.rounds[1].possibleOpponents).toContain("Winner R32-M7");
 
     // QF (Quarter-Final)
     expect(result.rounds[2].round).toBe("QUARTER_FINAL");
-    expect(result.rounds[2].bracketSlot).toBe("QF-M1");
+    expect(result.rounds[2].bracketSlot).toBe("QF-M3");
 
     // SF (Semi-Final)
     expect(result.rounds[3].round).toBe("SEMI_FINAL");
-    expect(result.rounds[3].bracketSlot).toBe("SF-M1");
+    expect(result.rounds[3].bracketSlot).toBe("SF-M2");
 
     // Final
     expect(result.rounds[4].round).toBe("FINAL");
@@ -94,12 +94,12 @@ describe("calculatePathway", () => {
     expect(result.team.id).toBe("MEX");
     expect(result.currentGroupPosition).toBe(2);
     
-    // Group A, Pos 2 maps to R32-M5
-    expect(result.rounds[0].bracketSlot).toBe("R32-M5");
-    expect(result.rounds[0].possibleOpponents).toEqual(["3rd Place from Groups B, C, or F"]);
+    // Group A, Pos 2 maps to R32-M1
+    expect(result.rounds[0].bracketSlot).toBe("R32-M1");
+    expect(result.rounds[0].possibleOpponents).toEqual(["Runner-up Group B"]);
 
-    // R32-M5 maps to R16-M3
-    expect(result.rounds[1].bracketSlot).toBe("R16-M3");
+    // R32-M1 maps to R16-M2
+    expect(result.rounds[1].bracketSlot).toBe("R16-M2");
   });
 
   it("should fallback to TBD for invalid slots", async () => {

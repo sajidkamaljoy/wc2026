@@ -5,30 +5,30 @@ export const KNOCKOUT_FLOW: Record<
   { target: number; position: "home" | "away" }
 > = {
   // Round of 32 -> Round of 16
-  73: { target: 89, position: "home" },
-  74: { target: 89, position: "away" },
-  75: { target: 90, position: "home" },
-  76: { target: 90, position: "away" },
-  77: { target: 91, position: "home" },
+  73: { target: 90, position: "home" },
+  74: { target: 89, position: "home" },
+  75: { target: 90, position: "away" },
+  76: { target: 91, position: "home" },
+  77: { target: 89, position: "away" },
   78: { target: 91, position: "away" },
   79: { target: 92, position: "home" },
   80: { target: 92, position: "away" },
-  81: { target: 93, position: "home" },
-  82: { target: 93, position: "away" },
-  83: { target: 94, position: "home" },
-  84: { target: 94, position: "away" },
-  85: { target: 95, position: "home" },
-  86: { target: 95, position: "away" },
-  87: { target: 96, position: "home" },
-  88: { target: 96, position: "away" },
+  81: { target: 94, position: "home" },
+  82: { target: 94, position: "away" },
+  83: { target: 93, position: "home" },
+  84: { target: 93, position: "away" },
+  85: { target: 96, position: "home" },
+  86: { target: 95, position: "home" },
+  87: { target: 96, position: "away" },
+  88: { target: 95, position: "away" },
 
   // Round of 16 -> Quarter-finals
   89: { target: 97, position: "home" },
   90: { target: 97, position: "away" },
-  91: { target: 98, position: "home" },
-  92: { target: 98, position: "away" },
-  93: { target: 99, position: "home" },
-  94: { target: 99, position: "away" },
+  91: { target: 99, position: "home" },
+  92: { target: 99, position: "away" },
+  93: { target: 98, position: "home" },
+  94: { target: 98, position: "away" },
   95: { target: 100, position: "home" },
   96: { target: 100, position: "away" },
 
@@ -55,18 +55,18 @@ export const SEMI_FLOW: Record<
 export function allocateThirdPlaces(selectedGroups: string[]): Record<number, string> {
   const pools: Record<number, string[]> = {
     74: ["A", "B", "C", "D", "F"],
-    88: ["A", "D", "E"],
-    79: ["C", "E", "F", "H", "I"],
     77: ["C", "D", "F", "G", "H"],
-    81: ["G", "H", "I"],
-    86: ["H", "I", "L"],
+    79: ["C", "E", "F", "H", "I"],
     80: ["E", "H", "I", "J", "K"],
-    82: ["J", "K", "L"],
+    81: ["B", "E", "F", "I", "J"],
+    82: ["A", "E", "H", "I", "J"],
+    85: ["E", "F", "G", "I", "J"],
+    87: ["D", "E", "I", "J", "L"],
   };
 
   const assignment: Record<number, string> = {};
   const used = new Set<string>();
-  const matchNumbers = [74, 88, 79, 77, 81, 86, 80, 82];
+  const matchNumbers = [74, 77, 79, 80, 81, 82, 85, 87];
 
   function backtrack(index: number): boolean {
     if (index === matchNumbers.length) return true;
