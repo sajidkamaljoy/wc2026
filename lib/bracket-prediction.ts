@@ -48,6 +48,31 @@ export const SEMI_FLOW: Record<
   102: { winnerTarget: 104, loserTarget: 103, position: "away" },
 };
 
+export const MATCH_SOURCES: Record<number, { home: number; away: number }> = {
+  // Round of 16
+  89: { home: 74, away: 77 },
+  90: { home: 73, away: 75 },
+  91: { home: 76, away: 78 },
+  92: { home: 79, away: 80 },
+  93: { home: 83, away: 84 },
+  94: { home: 81, away: 82 },
+  95: { home: 86, away: 88 },
+  96: { home: 85, away: 87 },
+
+  // Quarter-finals
+  97: { home: 89, away: 90 },
+  98: { home: 93, away: 94 },
+  99: { home: 91, away: 92 },
+  100: { home: 95, away: 96 },
+
+  // Semi-finals
+  101: { home: 97, away: 98 },
+  102: { home: 99, away: 100 },
+
+  // Final
+  104: { home: 101, away: 102 },
+};
+
 /**
  * Solves the allocation of the 8 selected third-place groups to the Round of 32 matches.
  * Uses a backtracking search over the FIFA 2026 knockout placeholders.

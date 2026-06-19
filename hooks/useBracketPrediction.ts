@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { allocateThirdPlaces, KNOCKOUT_FLOW, SEMI_FLOW } from "@/lib/bracket-prediction";
+import { allocateThirdPlaces, KNOCKOUT_FLOW, SEMI_FLOW, MATCH_SOURCES } from "@/lib/bracket-prediction";
 
 export interface Team {
   id: string;
@@ -212,10 +212,10 @@ export function useBracketPrediction() {
       73: { home: getTeam(groupRankings["A"]?.[1]), away: getTeam(groupRankings["B"]?.[1]) },
       // 74: 1E vs 3rd Place assigned to 74
       74: { home: getTeam(groupRankings["E"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[74]]?.[2]) },
-      // 75: 1C vs 2F
-      75: { home: getTeam(groupRankings["C"]?.[0]), away: getTeam(groupRankings["F"]?.[1]) },
-      // 76: 1F vs 2C
-      76: { home: getTeam(groupRankings["F"]?.[0]), away: getTeam(groupRankings["C"]?.[1]) },
+      // 75: 1F vs 2C
+      75: { home: getTeam(groupRankings["F"]?.[0]), away: getTeam(groupRankings["C"]?.[1]) },
+      // 76: 1C vs 2F
+      76: { home: getTeam(groupRankings["C"]?.[0]), away: getTeam(groupRankings["F"]?.[1]) },
       // 77: 1I vs 3rd assigned to 77
       77: { home: getTeam(groupRankings["I"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[77]]?.[2]) },
       // 78: 2E vs 2I
@@ -226,20 +226,20 @@ export function useBracketPrediction() {
       80: { home: getTeam(groupRankings["L"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[80]]?.[2]) },
       // 81: 1D vs 3rd assigned to 81
       81: { home: getTeam(groupRankings["D"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[81]]?.[2]) },
-      // 82: 2D vs 3rd assigned to 82
-      82: { home: getTeam(groupRankings["D"]?.[1]), away: getTeam(groupRankings[thirdPlaceAssignments[82]]?.[2]) },
-      // 83: 1G vs 2H
-      83: { home: getTeam(groupRankings["G"]?.[0]), away: getTeam(groupRankings["H"]?.[1]) },
+      // 82: 1G vs 3rd assigned to 82
+      82: { home: getTeam(groupRankings["G"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[82]]?.[2]) },
+      // 83: 2K vs 2L
+      83: { home: getTeam(groupRankings["K"]?.[1]), away: getTeam(groupRankings["L"]?.[1]) },
       // 84: 1H vs 2J
       84: { home: getTeam(groupRankings["H"]?.[0]), away: getTeam(groupRankings["J"]?.[1]) },
-      // 85: 1J vs 2K
-      85: { home: getTeam(groupRankings["J"]?.[0]), away: getTeam(groupRankings["K"]?.[1]) },
-      // 86: 2G vs 3rd assigned to 86
-      86: { home: getTeam(groupRankings["G"]?.[1]), away: getTeam(groupRankings[thirdPlaceAssignments[86]]?.[2]) },
-      // 87: 1K vs 2L
-      87: { home: getTeam(groupRankings["K"]?.[0]), away: getTeam(groupRankings["L"]?.[1]) },
-      // 88: 1B vs 3rd assigned to 88
-      88: { home: getTeam(groupRankings["B"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[88]]?.[2]) },
+      // 85: 1B vs 3rd assigned to 85
+      85: { home: getTeam(groupRankings["B"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[85]]?.[2]) },
+      // 86: 1J vs 2H
+      86: { home: getTeam(groupRankings["J"]?.[0]), away: getTeam(groupRankings["H"]?.[1]) },
+      // 87: 1K vs 3rd assigned to 87
+      87: { home: getTeam(groupRankings["K"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[87]]?.[2]) },
+      // 88: 2D vs 2G
+      88: { home: getTeam(groupRankings["D"]?.[1]), away: getTeam(groupRankings["G"]?.[1]) },
     };
 
     return matches;
@@ -251,39 +251,15 @@ export function useBracketPrediction() {
 
     const getTeam = (id?: string) => (id ? teamsMap.get(id) || null : null);
 
-    // Build downstream rounds in order
-    // Round of 16 (89 to 96)
-    for (let m = 89; m <= 96; m++) {
-      // Find the two matches that feed into this one
-      const sourceMatch1 = (m - 89) * 2 + 73;
-      const sourceMatch2 = (m - 89) * 2 + 74;
-
-      matches[m] = {
-        home: getTeam(knockoutPicks[sourceMatch1]),
-        away: getTeam(knockoutPicks[sourceMatch2]),
-      };
-    }
-
-    // Quarter-finals (97 to 100)
-    for (let m = 97; m <= 100; m++) {
-      const sourceMatch1 = (m - 97) * 2 + 89;
-      const sourceMatch2 = (m - 97) * 2 + 90;
-
-      matches[m] = {
-        home: getTeam(knockoutPicks[sourceMatch1]),
-        away: getTeam(knockoutPicks[sourceMatch2]),
-      };
-    }
-
-    // Semi-finals (101 and 102)
-    for (let m = 101; m <= 102; m++) {
-      const sourceMatch1 = (m - 101) * 2 + 97;
-      const sourceMatch2 = (m - 101) * 2 + 98;
-
-      matches[m] = {
-        home: getTeam(knockoutPicks[sourceMatch1]),
-        away: getTeam(knockoutPicks[sourceMatch2]),
-      };
+    // Build downstream rounds in order (89 to 102)
+    for (let m = 89; m <= 102; m++) {
+      const source = MATCH_SOURCES[m];
+      if (source) {
+        matches[m] = {
+          home: getTeam(knockoutPicks[source.home]),
+          away: getTeam(knockoutPicks[source.away]),
+        };
+      }
     }
 
     // Third Place Play-off (103) - losing semi-finalists
@@ -352,14 +328,9 @@ export function useBracketPrediction() {
       const match = r32Matches[matchId];
       return { homeId: match?.home?.id, awayId: match?.away?.id };
     }
-    if (matchId <= 96) {
-      return { homeId: picksState[(matchId - 89) * 2 + 73], awayId: picksState[(matchId - 89) * 2 + 74] };
-    }
-    if (matchId <= 100) {
-      return { homeId: picksState[(matchId - 97) * 2 + 89], awayId: picksState[(matchId - 97) * 2 + 90] };
-    }
-    if (matchId <= 102) {
-      return { homeId: picksState[(matchId - 101) * 2 + 97], awayId: picksState[(matchId - 101) * 2 + 98] };
+    const source = MATCH_SOURCES[matchId];
+    if (source) {
+      return { homeId: picksState[source.home], awayId: picksState[source.away] };
     }
     if (matchId === 103) {
       // Loser SF-M1 and Loser SF-M2

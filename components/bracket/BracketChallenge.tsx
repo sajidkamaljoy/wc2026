@@ -5,7 +5,7 @@ import { useBracketPrediction } from "@/hooks/useBracketPrediction";
 import { BracketProgressBar } from "./BracketProgressBar";
 import { BracketMatchCard } from "./BracketMatchCard";
 import { BracketLeaderboard } from "./BracketLeaderboard";
-import { encodePredictionState } from "@/lib/bracket-prediction";
+import { encodePredictionState, MATCH_SOURCES } from "@/lib/bracket-prediction";
 import {
   ChevronUp,
   ChevronDown,
@@ -450,8 +450,8 @@ export function BracketChallenge() {
                           awayTeam={match?.away}
                           winnerId={knockoutPicks[matchNum]}
                           onPickWinner={pickWinner}
-                          homePlaceholder={`Winner Match ${(idx * 2) + 73}`}
-                          awayPlaceholder={`Winner Match ${(idx * 2) + 74}`}
+                          homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
+                          awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
                         />
                       );
                     })}
@@ -476,8 +476,8 @@ export function BracketChallenge() {
                           awayTeam={match?.away}
                           winnerId={knockoutPicks[matchNum]}
                           onPickWinner={pickWinner}
-                          homePlaceholder={`Winner Match ${(idx * 2) + 89}`}
-                          awayPlaceholder={`Winner Match ${(idx * 2) + 90}`}
+                          homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
+                          awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
                         />
                       );
                     })}
@@ -502,8 +502,8 @@ export function BracketChallenge() {
                           awayTeam={match?.away}
                           winnerId={knockoutPicks[matchNum]}
                           onPickWinner={pickWinner}
-                          homePlaceholder={`Winner Match ${(idx * 2) + 97}`}
-                          awayPlaceholder={`Winner Match ${(idx * 2) + 98}`}
+                          homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
+                          awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
                         />
                       );
                     })}

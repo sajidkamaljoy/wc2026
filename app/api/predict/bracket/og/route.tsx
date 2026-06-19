@@ -78,18 +78,18 @@ function decodePredictionStateLocal(code: string) {
 function allocateThirdPlaces(selectedGroups: string[]): Record<number, string> {
   const pools: Record<number, string[]> = {
     74: ["A", "B", "C", "D", "F"],
-    88: ["A", "D", "E"],
-    79: ["C", "E", "F", "H", "I"],
     77: ["C", "D", "F", "G", "H"],
-    81: ["G", "H", "I"],
-    86: ["H", "I", "L"],
+    79: ["C", "E", "F", "H", "I"],
     80: ["E", "H", "I", "J", "K"],
-    82: ["J", "K", "L"],
+    81: ["B", "E", "F", "I", "J"],
+    82: ["A", "E", "H", "I", "J"],
+    85: ["E", "F", "G", "I", "J"],
+    87: ["D", "E", "I", "J", "L"],
   };
 
   const assignment: Record<number, string> = {};
   const used = new Set<string>();
-  const matchNumbers = [74, 88, 79, 77, 81, 86, 80, 82];
+  const matchNumbers = [74, 77, 79, 80, 81, 82, 85, 87];
 
   function backtrack(index: number): boolean {
     if (index === matchNumbers.length) return true;
@@ -198,20 +198,20 @@ export async function GET(request: Request) {
     const r32Config: Record<number, [string, number, string, number | null]> = {
       73: ["A", 1, "B", 1],
       74: ["E", 0, "thirdPlace", 74],
-      75: ["C", 0, "F", 1],
-      76: ["F", 0, "C", 1],
+      75: ["F", 0, "C", 1],
+      76: ["C", 0, "F", 1],
       77: ["I", 0, "thirdPlace", 77],
       78: ["E", 1, "I", 1],
       79: ["A", 0, "thirdPlace", 79],
       80: ["L", 0, "thirdPlace", 80],
       81: ["D", 0, "thirdPlace", 81],
-      82: ["D", 1, "thirdPlace", 82],
-      83: ["G", 0, "H", 1],
+      82: ["G", 0, "thirdPlace", 82],
+      83: ["K", 1, "L", 1],
       84: ["H", 0, "J", 1],
-      85: ["J", 0, "K", 1],
-      86: ["G", 1, "thirdPlace", 86],
-      87: ["K", 0, "L", 1],
-      88: ["B", 0, "thirdPlace", 88],
+      85: ["B", 0, "thirdPlace", 85],
+      86: ["J", 0, "H", 1],
+      87: ["K", 0, "thirdPlace", 87],
+      88: ["D", 1, "G", 1],
     };
 
     for (let m = 73; m <= 88; m++) {
@@ -237,35 +237,29 @@ export async function GET(request: Request) {
       };
     }
 
-    // B. Resolve R16 Matches (89 to 96)
-    for (let m = 89; m <= 96; m++) {
-      const source1 = (m - 89) * 2 + 73;
-      const source2 = (m - 89) * 2 + 74;
-      matches[m] = {
-        homeId: matches[source1]?.winnerId || null,
-        awayId: matches[source2]?.winnerId || null,
-        winnerId: picks[m] || picks[String(m)] || null,
-      };
-    }
+    const MATCH_SOURCES: Record<number, { home: number; away: number }> = {
+      89: { home: 74, away: 77 },
+      90: { home: 73, away: 75 },
+      91: { home: 76, away: 78 },
+      92: { home: 79, away: 80 },
+      93: { home: 83, away: 84 },
+      94: { home: 81, away: 82 },
+      95: { home: 86, away: 88 },
+      96: { home: 85, away: 87 },
+      97: { home: 89, away: 90 },
+      98: { home: 93, away: 94 },
+      99: { home: 91, away: 92 },
+      100: { home: 95, away: 96 },
+      101: { home: 97, away: 98 },
+      102: { home: 99, away: 100 },
+    };
 
-    // C. Resolve QF Matches (97 to 100)
-    for (let m = 97; m <= 100; m++) {
-      const source1 = (m - 97) * 2 + 89;
-      const source2 = (m - 97) * 2 + 90;
+    // B. Resolve downstream matches (89 to 102)
+    for (let m = 89; m <= 102; m++) {
+      const src = MATCH_SOURCES[m];
       matches[m] = {
-        homeId: matches[source1]?.winnerId || null,
-        awayId: matches[source2]?.winnerId || null,
-        winnerId: picks[m] || picks[String(m)] || null,
-      };
-    }
-
-    // D. Resolve SF Matches (101 to 102)
-    for (let m = 101; m <= 102; m++) {
-      const source1 = (m - 101) * 2 + 97;
-      const source2 = (m - 101) * 2 + 98;
-      matches[m] = {
-        homeId: matches[source1]?.winnerId || null,
-        awayId: matches[source2]?.winnerId || null,
+        homeId: matches[src.home]?.winnerId || null,
+        awayId: matches[src.away]?.winnerId || null,
         winnerId: picks[m] || picks[String(m)] || null,
       };
     }
