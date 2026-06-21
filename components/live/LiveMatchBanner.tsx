@@ -87,6 +87,22 @@ export function LiveMatchBanner({ matches = [] }: Props) {
         }
       }
 
+      // 3. Fallback: Check if any match is currently running in its scheduled time window (2-hour window after kickoff)
+      const now = new Date();
+      const runningMatches = matches.filter((m) => {
+        const liveData = scores.find((s) => s.matchId === m.id);
+        const status = liveData?.status ?? m.status;
+        if (status === "FINISHED") return false;
+
+        const kickoff = new Date(m.kickoffUtc);
+        const end = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+        return now >= kickoff && now <= end;
+      });
+
+      if (runningMatches.length > 0) {
+        return sortByLatest(runningMatches)[0];
+      }
+
       return null;
     };
 
