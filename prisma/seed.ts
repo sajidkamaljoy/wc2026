@@ -199,35 +199,35 @@ const GROUP_FIXTURES: [number, string, string, string, string, string][] = [
 const KNOCKOUT_FIXTURES: [number, Stage, string, string, string][] = [
   // Round of 32
   [73, Stage.ROUND_OF_32, "Runner-up Group A", "Runner-up Group B", "2026-06-28T19:00:00Z"],
-  [74, Stage.ROUND_OF_32, "Winner Group E", "3rd Place A/B/C/D/F", "2026-06-29T17:00:00Z"],
-  [75, Stage.ROUND_OF_32, "Winner Group C", "Runner-up Group F", "2026-06-29T20:00:00Z"],
-  [76, Stage.ROUND_OF_32, "Winner Group F", "Runner-up Group C", "2026-06-30T04:00:00Z"],
-  [77, Stage.ROUND_OF_32, "Winner Group I", "3rd Place C/D/F/G/H", "2026-06-30T01:00:00Z"],
-  [78, Stage.ROUND_OF_32, "Runner-up Group E", "Runner-up Group I", "2026-06-30T22:00:00Z"],
-  [79, Stage.ROUND_OF_32, "Winner Group A", "3rd Place C/E/F/H/I", "2026-07-01T04:00:00Z"],
-  [80, Stage.ROUND_OF_32, "Winner Group L", "3rd Place E/H/I/J/K", "2026-07-01T21:00:00Z"],
-  [81, Stage.ROUND_OF_32, "Winner Group D", "3rd Place G/H/I", "2026-07-01T00:00:00Z"],
-  [82, Stage.ROUND_OF_32, "Runner-up Group D", "3rd Place J/K/L", "2026-07-02T20:00:00Z"],
-  [83, Stage.ROUND_OF_32, "Winner Group G", "Runner-up Group H", "2026-07-02T23:00:00Z"],
-  [84, Stage.ROUND_OF_32, "Winner Group H", "Runner-up Group J", "2026-07-03T00:00:00Z"],
-  [85, Stage.ROUND_OF_32, "Winner Group J", "Runner-up Group K", "2026-07-03T20:00:00Z"],
-  [86, Stage.ROUND_OF_32, "Runner-up Group G", "3rd Place H/I/L", "2026-07-03T23:00:00Z"],
-  [87, Stage.ROUND_OF_32, "Winner Group K", "Runner-up Group L", "2026-07-04T02:00:00Z"],
-  [88, Stage.ROUND_OF_32, "Winner Group B", "3rd Place A/D/E", "2026-07-04T01:00:00Z"],
+  [74, Stage.ROUND_OF_32, "Winner Group E", "3rd Place A/B/C/D/F", "2026-06-29T20:30:00Z"],
+  [75, Stage.ROUND_OF_32, "Winner Group F", "Runner-up Group C", "2026-06-30T01:00:00Z"],
+  [76, Stage.ROUND_OF_32, "Winner Group C", "Runner-up Group F", "2026-06-29T17:00:00Z"],
+  [77, Stage.ROUND_OF_32, "Winner Group I", "3rd Place C/D/F/G/H", "2026-06-30T21:00:00Z"],
+  [78, Stage.ROUND_OF_32, "Runner-up Group E", "Runner-up Group I", "2026-06-30T17:00:00Z"],
+  [79, Stage.ROUND_OF_32, "Winner Group A", "3rd Place C/E/F/H/I", "2026-07-01T01:00:00Z"],
+  [80, Stage.ROUND_OF_32, "Winner Group L", "3rd Place E/H/I/J/K", "2026-07-01T16:00:00Z"],
+  [81, Stage.ROUND_OF_32, "Winner Group D", "3rd Place B/E/F/I/J", "2026-07-02T00:00:00Z"],
+  [82, Stage.ROUND_OF_32, "Winner Group G", "3rd Place A/E/H/I/J", "2026-07-01T20:00:00Z"],
+  [83, Stage.ROUND_OF_32, "Runner-up Group K", "Runner-up Group L", "2026-07-02T23:00:00Z"],
+  [84, Stage.ROUND_OF_32, "Winner Group H", "Runner-up Group J", "2026-07-02T19:00:00Z"],
+  [85, Stage.ROUND_OF_32, "Winner Group B", "3rd Place E/F/G/I/J", "2026-07-03T03:00:00Z"],
+  [86, Stage.ROUND_OF_32, "Winner Group J", "Runner-up Group H", "2026-07-03T22:00:00Z"],
+  [87, Stage.ROUND_OF_32, "Winner Group K", "3rd Place D/E/I/J/L", "2026-07-04T01:30:00Z"],
+  [88, Stage.ROUND_OF_32, "Runner-up Group D", "Runner-up Group G", "2026-07-03T18:00:00Z"],
   // Round of 16
-  [89, Stage.ROUND_OF_16, "Winner R32-M1", "Winner R32-M2", "2026-07-05T19:00:00Z"],
-  [90, Stage.ROUND_OF_16, "Winner R32-M3", "Winner R32-M4", "2026-07-05T22:00:00Z"],
-  [91, Stage.ROUND_OF_16, "Winner R32-M5", "Winner R32-M6", "2026-07-06T19:00:00Z"],
+  [89, Stage.ROUND_OF_16, "Winner R32-M2", "Winner R32-M5", "2026-07-05T19:00:00Z"],
+  [90, Stage.ROUND_OF_16, "Winner R32-M1", "Winner R32-M3", "2026-07-05T22:00:00Z"],
+  [91, Stage.ROUND_OF_16, "Winner R32-M4", "Winner R32-M6", "2026-07-06T19:00:00Z"],
   [92, Stage.ROUND_OF_16, "Winner R32-M7", "Winner R32-M8", "2026-07-06T22:00:00Z"],
-  [93, Stage.ROUND_OF_16, "Winner R32-M9", "Winner R32-M10", "2026-07-07T19:00:00Z"],
-  [94, Stage.ROUND_OF_16, "Winner R32-M11", "Winner R32-M12", "2026-07-07T22:00:00Z"],
-  [95, Stage.ROUND_OF_16, "Winner R32-M13", "Winner R32-M14", "2026-07-08T19:00:00Z"],
-  [96, Stage.ROUND_OF_16, "Winner R32-M15", "Winner R32-M16", "2026-07-08T22:00:00Z"],
+  [93, Stage.ROUND_OF_16, "Winner R32-M11", "Winner R32-M12", "2026-07-07T19:00:00Z"],
+  [94, Stage.ROUND_OF_16, "Winner R32-M9", "Winner R32-M10", "2026-07-07T22:00:00Z"],
+  [95, Stage.ROUND_OF_16, "Winner R32-M14", "Winner R32-M16", "2026-07-08T19:00:00Z"],
+  [96, Stage.ROUND_OF_16, "Winner R32-M13", "Winner R32-M15", "2026-07-08T22:00:00Z"],
   // Quarter-Finals
-  [97, Stage.QUARTER_FINAL, "Winner R16-M1", "Winner R16-M2", "2026-07-10T19:00:00Z"],
-  [98, Stage.QUARTER_FINAL, "Winner R16-M3", "Winner R16-M4", "2026-07-10T22:00:00Z"],
-  [99, Stage.QUARTER_FINAL, "Winner R16-M5", "Winner R16-M6", "2026-07-11T19:00:00Z"],
-  [100, Stage.QUARTER_FINAL, "Winner R16-M7", "Winner R16-M8", "2026-07-11T22:00:00Z"],
+  [97, Stage.QUARTER_FINAL, "Winner R16-M1", "Winner R16-M2", "2026-07-10T19:00:00Z"], // already correct
+  [98, Stage.QUARTER_FINAL, "Winner R16-M5", "Winner R16-M6", "2026-07-10T22:00:00Z"], // was M3/M4
+  [99, Stage.QUARTER_FINAL, "Winner R16-M3", "Winner R16-M4", "2026-07-11T19:00:00Z"], // was M5/M6
+  [100, Stage.QUARTER_FINAL, "Winner R16-M7", "Winner R16-M8", "2026-07-11T22:00:00Z"], // already correct
   // Semi-Finals
   [101, Stage.SEMI_FINAL, "Winner QF-M1", "Winner QF-M2", "2026-07-14T22:00:00Z"],
   [102, Stage.SEMI_FINAL, "Winner QF-M3", "Winner QF-M4", "2026-07-15T22:00:00Z"],
@@ -238,15 +238,21 @@ const KNOCKOUT_FIXTURES: [number, Stage, string, string, string][] = [
 ];
 
 const KNOCKOUT_VENUES: Record<number, string> = {
-  73: "los_angeles", 74: "boston", 75: "houston", 76: "guadalajara",
+  // Round of 32
+  73: "los_angeles", 74: "boston", 75: "monterrey", 76: "houston",
   77: "new_york", 78: "dallas", 79: "mexico_city", 80: "atlanta",
-  81: "seattle", 82: "san_francisco", 83: "philadelphia", 84: "los_angeles",
-  85: "dallas", 86: "monterrey", 87: "san_francisco", 88: "new_york",
-  89: "dallas", 90: "miami", 91: "new_york", 92: "los_angeles",
-  93: "houston", 94: "seattle", 95: "san_francisco", 96: "atlanta",
-  97: "dallas", 98: "new_york", 99: "miami", 100: "los_angeles",
-  101: "dallas", 102: "new_york",
+  81: "san_francisco", 82: "seattle", 83: "toronto", 84: "los_angeles",
+  85: "vancouver", 86: "miami", 87: "kansas_city", 88: "dallas",
+  // Round of 16
+  89: "philadelphia", 90: "houston", 91: "new_york", 92: "mexico_city",
+  93: "dallas", 94: "seattle", 95: "atlanta", 96: "vancouver",
+  // Quarter-Finals
+  97: "boston", 98: "los_angeles", 99: "miami", 100: "kansas_city",
+  // Semi-Finals
+  101: "dallas", 102: "atlanta",
+  // 3rd Place
   103: "miami",
+  // Final
   104: "new_york",
 };
 

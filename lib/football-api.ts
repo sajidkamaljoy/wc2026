@@ -104,6 +104,20 @@ async function getIdMap(forceRefresh = false): Promise<Map<string, string>> {
   return idMap;
 }
 
+function normalizeTeamName(name: string): string {
+  if (!name) return "";
+  const n = name.toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  
+  if (n === "congo dr" || n === "dr congo" || n === "democratic republic of congo" || n === "cod") {
+    return "dr congo";
+  }
+  return n;
+}
+
 export async function getLiveScoresMapped(): Promise<LiveScore[]> {
   try {
     if (!KEY) {
@@ -156,15 +170,15 @@ export async function getLiveScoresMapped(): Promise<LiveScore[]> {
               m.homeTeam?.name ?? "",
               m.homeTeam?.shortName ?? "",
               m.homePlaceholder ?? "",
-            ].map((n) => n.toLowerCase());
+            ].map((n) => normalizeTeamName(n));
             const awayNames = [
               m.awayTeam?.name ?? "",
               m.awayTeam?.shortName ?? "",
               m.awayPlaceholder ?? "",
-            ].map((n) => n.toLowerCase());
+            ].map((n) => normalizeTeamName(n));
 
-            const apiHome = apiHomeTeamName.toLowerCase();
-            const apiAway = apiAwayTeamName.toLowerCase();
+            const apiHome = normalizeTeamName(apiHomeTeamName);
+            const apiAway = normalizeTeamName(apiAwayTeamName);
 
             const homeMatch = homeNames.some(
               (n) => n && (n.includes(apiHome) || apiHome.includes(n))

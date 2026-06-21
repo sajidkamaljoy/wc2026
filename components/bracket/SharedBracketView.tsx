@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { allocateThirdPlaces, encodePredictionState } from "@/lib/bracket-prediction";
+import { allocateThirdPlaces, encodePredictionState, MATCH_SOURCES } from "@/lib/bracket-prediction";
 import { BracketMatchCard } from "./BracketMatchCard";
 import {
   Trophy,
@@ -73,20 +73,20 @@ export function SharedBracketView({ prediction, groups }: Props) {
     return {
       73: { home: getTeam(groupRankings["A"]?.[1]), away: getTeam(groupRankings["B"]?.[1]) },
       74: { home: getTeam(groupRankings["E"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[74]]?.[2]) },
-      75: { home: getTeam(groupRankings["C"]?.[0]), away: getTeam(groupRankings["F"]?.[1]) },
-      76: { home: getTeam(groupRankings["F"]?.[0]), away: getTeam(groupRankings["C"]?.[1]) },
+      75: { home: getTeam(groupRankings["F"]?.[0]), away: getTeam(groupRankings["C"]?.[1]) },
+      76: { home: getTeam(groupRankings["C"]?.[0]), away: getTeam(groupRankings["F"]?.[1]) },
       77: { home: getTeam(groupRankings["I"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[77]]?.[2]) },
       78: { home: getTeam(groupRankings["E"]?.[1]), away: getTeam(groupRankings["I"]?.[1]) },
       79: { home: getTeam(groupRankings["A"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[79]]?.[2]) },
       80: { home: getTeam(groupRankings["L"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[80]]?.[2]) },
       81: { home: getTeam(groupRankings["D"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[81]]?.[2]) },
-      82: { home: getTeam(groupRankings["D"]?.[1]), away: getTeam(groupRankings[thirdPlaceAssignments[82]]?.[2]) },
-      83: { home: getTeam(groupRankings["G"]?.[0]), away: getTeam(groupRankings["H"]?.[1]) },
+      82: { home: getTeam(groupRankings["G"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[82]]?.[2]) },
+      83: { home: getTeam(groupRankings["K"]?.[1]), away: getTeam(groupRankings["L"]?.[1]) },
       84: { home: getTeam(groupRankings["H"]?.[0]), away: getTeam(groupRankings["J"]?.[1]) },
-      85: { home: getTeam(groupRankings["J"]?.[0]), away: getTeam(groupRankings["K"]?.[1]) },
-      86: { home: getTeam(groupRankings["G"]?.[1]), away: getTeam(groupRankings[thirdPlaceAssignments[86]]?.[2]) },
-      87: { home: getTeam(groupRankings["K"]?.[0]), away: getTeam(groupRankings["L"]?.[1]) },
-      88: { home: getTeam(groupRankings["B"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[88]]?.[2]) },
+      85: { home: getTeam(groupRankings["B"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[85]]?.[2]) },
+      86: { home: getTeam(groupRankings["J"]?.[0]), away: getTeam(groupRankings["H"]?.[1]) },
+      87: { home: getTeam(groupRankings["K"]?.[0]), away: getTeam(groupRankings[thirdPlaceAssignments[87]]?.[2]) },
+      88: { home: getTeam(groupRankings["D"]?.[1]), away: getTeam(groupRankings["G"]?.[1]) },
     };
   }, [groups, groupRankings, thirdPlaces, teamsMap]);
 
@@ -95,34 +95,15 @@ export function SharedBracketView({ prediction, groups }: Props) {
     const matches: Record<number, { home: Team | null; away: Team | null }> = { ...r32Matches } as any;
     const getTeam = (id?: string) => (id ? teamsMap.get(id) || null : null);
 
-    // Round of 16 (89 to 96)
-    for (let m = 89; m <= 96; m++) {
-      const sourceMatch1 = (m - 89) * 2 + 73;
-      const sourceMatch2 = (m - 89) * 2 + 74;
-      matches[m] = {
-        home: getTeam(knockoutPicks[sourceMatch1]),
-        away: getTeam(knockoutPicks[sourceMatch2]),
-      };
-    }
-
-    // Quarter-finals (97 to 100)
-    for (let m = 97; m <= 100; m++) {
-      const sourceMatch1 = (m - 97) * 2 + 89;
-      const sourceMatch2 = (m - 97) * 2 + 90;
-      matches[m] = {
-        home: getTeam(knockoutPicks[sourceMatch1]),
-        away: getTeam(knockoutPicks[sourceMatch2]),
-      };
-    }
-
-    // Semi-finals (101 and 102)
-    for (let m = 101; m <= 102; m++) {
-      const sourceMatch1 = (m - 101) * 2 + 97;
-      const sourceMatch2 = (m - 101) * 2 + 98;
-      matches[m] = {
-        home: getTeam(knockoutPicks[sourceMatch1]),
-        away: getTeam(knockoutPicks[sourceMatch2]),
-      };
+    // Build downstream rounds in order (89 to 102)
+    for (let m = 89; m <= 102; m++) {
+      const source = MATCH_SOURCES[m];
+      if (source) {
+        matches[m] = {
+          home: getTeam(knockoutPicks[source.home]),
+          away: getTeam(knockoutPicks[source.away]),
+        };
+      }
     }
 
     // Third Place Play-off (103)
@@ -311,8 +292,8 @@ export function SharedBracketView({ prediction, groups }: Props) {
                         awayTeam={match?.away}
                         winnerId={knockoutPicks[matchNum]}
                         onPickWinner={() => {}}
-                        homePlaceholder={`Winner Match ${(idx * 2) + 73}`}
-                        awayPlaceholder={`Winner Match ${(idx * 2) + 74}`}
+                        homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
+                        awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
                       />
                     </div>
                   );
@@ -338,8 +319,8 @@ export function SharedBracketView({ prediction, groups }: Props) {
                         awayTeam={match?.away}
                         winnerId={knockoutPicks[matchNum]}
                         onPickWinner={() => {}}
-                        homePlaceholder={`Winner Match ${(idx * 2) + 89}`}
-                        awayPlaceholder={`Winner Match ${(idx * 2) + 90}`}
+                        homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
+                        awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
                       />
                     </div>
                   );
@@ -365,8 +346,8 @@ export function SharedBracketView({ prediction, groups }: Props) {
                         awayTeam={match?.away}
                         winnerId={knockoutPicks[matchNum]}
                         onPickWinner={() => {}}
-                        homePlaceholder={`Winner Match ${(idx * 2) + 97}`}
-                        awayPlaceholder={`Winner Match ${(idx * 2) + 98}`}
+                        homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
+                        awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
                       />
                     </div>
                   );

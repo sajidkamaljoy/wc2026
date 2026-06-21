@@ -115,11 +115,13 @@ describe("LiveMatchBanner - Selection Logic", () => {
   it("should show the latest match when multiple matches fall in the active time window", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ liveMatchIds: [], streamedLiveMatches: [] }),
+      json: async () => ({
+        liveMatchIds: ["match-1", "match-2"],
+        streamedLiveMatches: []
+      }),
     });
 
     // Freeze time to 2026-06-11T20:00:00Z.
-    // match-1 is at 19:00, match-2 is at 19:30. Both are within 2 hours window.
     const simultaneousMatches: MatchWithTeams[] = [
       {
         ...mockMatches[0],
@@ -135,6 +137,17 @@ describe("LiveMatchBanner - Selection Logic", () => {
 
     render(<LiveMatchBanner matches={simultaneousMatches} />);
 
+    // 1. Run the setMounted(true) timer
+    await act(async () => {
+      vi.runOnlyPendingTimers();
+    });
+
+    // 2. Let the fetch API resolution resolve and run state updates
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // 3. Run the setActiveMatch(resolved) timer
     await act(async () => {
       vi.runOnlyPendingTimers();
     });
