@@ -95,14 +95,14 @@ export default async function WatchPage({ searchParams }: PageProps) {
         };
       }
     } else {
-      // No query parameter provided: find a match currently in progress (within kickoff + 2 hours window) and not FINISHED
+      // No query parameter provided: find a match currently in progress (within kickoff + 4 hours window) and not FINISHED
       const now = new Date();
-      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+      const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
       
       const dbMatch = await prisma.match.findFirst({
         where: {
           kickoffUtc: {
-            gte: twoHoursAgo,
+            gte: fourHoursAgo,
             lte: now,
           },
           status: {

@@ -87,7 +87,7 @@ export function LiveMatchBanner({ matches = [] }: Props) {
         }
       }
 
-      // 3. Fallback: Check if any match is currently running in its scheduled time window (2-hour window after kickoff)
+      // 3. Fallback: Check if any match is currently running in its scheduled time window (3 hours for group, 4 hours for knockout)
       const now = new Date();
       const runningMatches = matches.filter((m) => {
         const liveData = scores.find((s) => s.matchId === m.id);
@@ -95,7 +95,9 @@ export function LiveMatchBanner({ matches = [] }: Props) {
         if (status === "FINISHED") return false;
 
         const kickoff = new Date(m.kickoffUtc);
-        const end = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+        const isKnockout = !m.groupId;
+        const duration = isKnockout ? 4 * 60 * 60 * 1000 : 3 * 60 * 60 * 1000;
+        const end = new Date(kickoff.getTime() + duration);
         return now >= kickoff && now <= end;
       });
 
