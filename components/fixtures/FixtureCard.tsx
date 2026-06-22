@@ -36,10 +36,11 @@ export function FixtureCard({ match, userPrediction }: Props) {
   const isLive = status === "LIVE" || status === "HALF_TIME";
   const isKnockout = !match.groupId;
 
-  // Watch link condition: match is live or is currently running within 2 hours of kickoff, and not finished
+  // Watch link condition: match is live or is currently running within scheduled window, and not finished
   const now = new Date();
   const kickoff = new Date(match.kickoffUtc);
-  const end = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+  const duration = isKnockout ? 4 * 60 * 60 * 1000 : 3 * 60 * 60 * 1000; // 4 hours for KO (extra time/penalties), 3 hours for group
+  const end = new Date(kickoff.getTime() + duration);
   const isTimeRunning = now >= kickoff && now <= end && status !== "FINISHED";
   const showWatchLink = isLive || isTimeRunning;
 
