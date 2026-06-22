@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { Trophy, Target, User } from "lucide-react";
 import type { Metadata } from "next";
+import { PredictionHistory } from "@/components/pickem/PredictionHistory";
 
 export const metadata: Metadata = {
   title: "Fan Pick'em Leaderboard",
@@ -21,16 +22,52 @@ export default async function PickemPage() {
   const deviceId = cookieStore.get("deviceId")?.value;
 
   let currentUser = null;
+  let serializedPredictions: any[] = [];
+
   if (deviceId) {
     currentUser = await prisma.user.findUnique({
       where: { deviceId },
       include: {
         predictions: {
-          include: { match: { include: { homeTeam: true, awayTeam: true } } },
+          include: { 
+            match: { 
+              include: { 
+                homeTeam: { select: { id: true, name: true, flagUrl: true } }, 
+                awayTeam: { select: { id: true, name: true, flagUrl: true } },
+                venue: { select: { name: true, city: true, country: true } }
+              } 
+            } 
+          },
           orderBy: { match: { kickoffUtc: 'desc' } }
         }
       }
     });
+
+    if (currentUser && currentUser.predictions) {
+      serializedPredictions = currentUser.predictions.map((pred) => ({
+        id: pred.id,
+        userId: pred.userId,
+        matchId: pred.matchId,
+        homeScore: pred.homeScore,
+        awayScore: pred.awayScore,
+        pointsEarned: pred.pointsEarned,
+        createdAt: pred.createdAt.toISOString(),
+        updatedAt: pred.updatedAt.toISOString(),
+        match: {
+          id: pred.match.id,
+          matchNumber: pred.match.matchNumber,
+          stage: pred.match.stage,
+          groupId: pred.match.groupId,
+          kickoffUtc: pred.match.kickoffUtc.toISOString(),
+          status: pred.match.status,
+          homeScore: pred.match.homeScore,
+          awayScore: pred.match.awayScore,
+          homeTeam: pred.match.homeTeam,
+          awayTeam: pred.match.awayTeam,
+          venue: pred.match.venue
+        }
+      }));
+    }
   }
 
   const leaderboard = await prisma.user.findMany({
@@ -122,6 +159,11 @@ export default async function PickemPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* User's Prediction History */}
+      <div className="mt-12">
+        <PredictionHistory initialPredictions={serializedPredictions} />
       </div>
     </div>
   );
