@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
     
-    if (match.status !== "SCHEDULED") {
+    const now = new Date();
+    if (match.status !== "SCHEDULED" || now >= new Date(match.kickoffUtc)) {
       return NextResponse.json({ error: "Match has already started" }, { status: 403 });
     }
 

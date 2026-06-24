@@ -43,6 +43,8 @@ export function FixtureCard({ match, userPrediction }: Props) {
   const end = new Date(kickoff.getTime() + duration);
   const isTimeRunning = now >= kickoff && now <= end && status !== "FINISHED";
   const showWatchLink = isLive || isTimeRunning;
+  const isGameStarted = status !== "SCHEDULED" || now >= kickoff;
+  const canPredict = !isGameStarted && !!match.homeTeam && !!match.awayTeam;
 
   return (
     <div className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${isLive
@@ -110,9 +112,9 @@ export function FixtureCard({ match, userPrediction }: Props) {
         </div>
       </div>
 
-      {((status === "SCHEDULED" && match.homeTeam && match.awayTeam) || showWatchLink) && (
+      {((canPredict) || (isGameStarted && localPrediction) || showWatchLink) && (
         <div className="w-full mt-3 pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2 px-4 pb-1.5">
-          {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
+          {canPredict && (
             <button
               onClick={() => setIsModalOpen(true)}
               className={`flex-1 py-2 px-6 rounded-xl font-semibold text-xs transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${localPrediction
@@ -133,6 +135,16 @@ export function FixtureCard({ match, userPrediction }: Props) {
             </button>
           )}
 
+          {isGameStarted && localPrediction && (
+            <div className="flex-1 py-2 px-6 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 bg-slate-950/40 border border-white/5 text-slate-400">
+              <span>Your Prediction:</span>
+              <span className="bg-slate-800 text-slate-300 font-mono font-bold px-2 py-0.5 rounded-full text-[10px]">
+                {localPrediction.homeScore} – {localPrediction.awayScore}
+              </span>
+              <span className="text-[10px] text-slate-500">(Locked)</span>
+            </div>
+          )}
+
           {showWatchLink && (
             <Link
               href={`/watch?matchNumber=${match.matchNumber}`}
@@ -151,7 +163,7 @@ export function FixtureCard({ match, userPrediction }: Props) {
         </div>
       )}
 
-      {status === "SCHEDULED" && match.homeTeam && match.awayTeam && (
+      {canPredict && (
         <PredictionModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
