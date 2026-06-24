@@ -163,7 +163,7 @@ export function FixtureCard({ match, userPrediction }: Props) {
         </div>
       )}
 
-      {canPredict && (
+      {canPredict && match.homeTeam && match.awayTeam && (
         <PredictionModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
