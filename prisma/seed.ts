@@ -389,7 +389,13 @@ async function main() {
   for (const [n, stage, homePH, awayPH, kickoff] of KNOCKOUT_FIXTURES) {
     await prisma.match.upsert({
       where: { matchNumber: n },
-      update: {},
+      update: {
+        stage,
+        homePlaceholder: homePH,
+        awayPlaceholder: awayPH,
+        kickoffUtc: new Date(kickoff),
+        venueId: KNOCKOUT_VENUES[n] ?? "new_york",
+      },
       create: {
         matchNumber: n,
         stage,

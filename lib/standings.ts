@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { Stage, MatchStatus } from "@prisma/client";
 import { revalidateTag } from "next/cache";
+import { autoResolveKnockouts } from "./knockout-resolver";
 
 export async function recalculateGroupStandings(): Promise<void> {
   try {
@@ -116,6 +117,9 @@ export async function recalculateGroupStandings(): Promise<void> {
         err
       );
     }
+
+    // 6. Auto-populate knockout pairings if group stage is completed
+    await autoResolveKnockouts();
   } catch (error) {
     console.error("Error recalculating group standings:", error);
   }
