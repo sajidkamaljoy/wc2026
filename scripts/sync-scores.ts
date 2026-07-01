@@ -93,8 +93,34 @@ async function main() {
   for (const apiMatch of apiMatches) {
     const externalId = apiMatch.id.toString();
     const newStatus = mapStatus(apiMatch.status);
-    const homeScore: number | null = apiMatch.score?.fullTime?.home ?? null;
-    const awayScore: number | null = apiMatch.score?.fullTime?.away ?? null;
+    
+    const duration = apiMatch.score?.duration;
+    let homeScore: number | null = null;
+    let awayScore: number | null = null;
+    let homeScoreET: number | null = null;
+    let awayScoreET: number | null = null;
+    let homeScorePens: number | null = null;
+    let awayScorePens: number | null = null;
+
+    if (apiMatch.score) {
+      if (duration === "PENALTY_SHOOTOUT") {
+        homeScore = apiMatch.score.regularTime?.home ?? null;
+        awayScore = apiMatch.score.regularTime?.away ?? null;
+        homeScoreET = (apiMatch.score.regularTime?.home ?? 0) + (apiMatch.score.extraTime?.home ?? 0);
+        awayScoreET = (apiMatch.score.regularTime?.away ?? 0) + (apiMatch.score.extraTime?.away ?? 0);
+        homeScorePens = apiMatch.score.penalties?.home ?? null;
+        awayScorePens = apiMatch.score.penalties?.away ?? null;
+      } else if (duration === "EXTRA_TIME") {
+        homeScore = apiMatch.score.regularTime?.home ?? null;
+        awayScore = apiMatch.score.regularTime?.away ?? null;
+        homeScoreET = (apiMatch.score.regularTime?.home ?? 0) + (apiMatch.score.extraTime?.home ?? 0);
+        awayScoreET = (apiMatch.score.regularTime?.away ?? 0) + (apiMatch.score.extraTime?.away ?? 0);
+      } else {
+        homeScore = apiMatch.score.regularTime?.home ?? apiMatch.score.fullTime?.home ?? null;
+        awayScore = apiMatch.score.regularTime?.away ?? apiMatch.score.fullTime?.away ?? null;
+      }
+    }
+
     const apiHomeTeamName: string = apiMatch.homeTeam?.name ?? "";
     const apiAwayTeamName: string = apiMatch.awayTeam?.name ?? "";
     const apiDate = new Date(apiMatch.utcDate);
@@ -150,10 +176,14 @@ async function main() {
     const needsScoreUpdate =
       dbMatch.homeScore !== homeScore ||
       dbMatch.awayScore !== awayScore ||
+      dbMatch.homeScoreET !== homeScoreET ||
+      dbMatch.awayScoreET !== awayScoreET ||
+      dbMatch.homeScorePens !== homeScorePens ||
+      dbMatch.awayScorePens !== awayScorePens ||
       dbMatch.status !== newStatus;
 
     if (!needsExternalId && !needsScoreUpdate) {
-      console.log(`✅ Match ${dbMatch.matchNumber} already up to date.`);
+      console.log(`` + `✅ Match ${dbMatch.matchNumber} already up to date.`);
       skipped++;
       continue;
     }
@@ -172,6 +202,10 @@ async function main() {
         status: newStatus,
         homeScore,
         awayScore,
+        homeScoreET,
+        awayScoreET,
+        homeScorePens,
+        awayScorePens,
       },
     });
 

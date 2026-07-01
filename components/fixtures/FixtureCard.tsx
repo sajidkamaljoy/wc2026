@@ -31,6 +31,10 @@ export function FixtureCard({ match, userPrediction }: Props) {
 
   const homeScore = liveData?.homeScore ?? match.homeScore;
   const awayScore = liveData?.awayScore ?? match.awayScore;
+  const homeScoreET = liveData?.homeScoreET ?? match.homeScoreET;
+  const awayScoreET = liveData?.awayScoreET ?? match.awayScoreET;
+  const homeScorePens = liveData?.homeScorePens ?? match.homeScorePens;
+  const awayScorePens = liveData?.awayScorePens ?? match.awayScorePens;
   const status = liveData?.status ?? match.status;
 
   const isLive = status === "LIVE" || status === "HALF_TIME";
@@ -88,8 +92,22 @@ export function FixtureCard({ match, userPrediction }: Props) {
               <div className="flex flex-col items-center">
                 <span className={`font-mono font-extrabold text-2xl sm:text-3xl tracking-tight ${isLive ? "text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "text-white"
                   }`}>
-                  {homeScore ?? 0} <span className="text-slate-600 font-sans text-xl font-normal mx-0.5">–</span> {awayScore ?? 0}
+                  {homeScoreET !== undefined && homeScoreET !== null && awayScoreET !== undefined && awayScoreET !== null ? (
+                    <>{homeScoreET} <span className="text-slate-600 font-sans text-xl font-normal mx-0.5">–</span> {awayScoreET}</>
+                  ) : (
+                    <>{homeScore ?? 0} <span className="text-slate-600 font-sans text-xl font-normal mx-0.5">–</span> {awayScore ?? 0}</>
+                  )}
                 </span>
+                {homeScorePens !== undefined && homeScorePens !== null && awayScorePens !== undefined && awayScorePens !== null && (
+                  <span className="text-[10px] sm:text-xs font-semibold text-amber-400/90 tracking-wider mt-1 uppercase bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
+                    {homeScorePens}–{awayScorePens} pens
+                  </span>
+                )}
+                {homeScoreET !== undefined && homeScoreET !== null && (homeScorePens === undefined || homeScorePens === null) && (
+                  <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 tracking-wider mt-1 uppercase bg-white/5 px-1.5 py-0.5 rounded">
+                    AET
+                  </span>
+                )}
               </div>
             )}
             <LiveScoreBadge status={status} minute={liveData?.minute} />

@@ -100,9 +100,21 @@ function MatchCard({ match }: { match: any }) {
   return (
     <div className={`flex flex-col rounded-xl bg-slate-900/40 p-4 transition-all hover:bg-slate-900/80 hover:border-white/10 relative ${accent.border}`}>
       <div className="text-[10px] uppercase font-bold mb-3 flex justify-between items-center">
-        <span className={`px-1.5 py-0.5 rounded-md border text-[9px] font-extrabold tracking-wider uppercase ${accent.badge}`}>
-          {accent.label}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className={`px-1.5 py-0.5 rounded-md border text-[9px] font-extrabold tracking-wider uppercase ${accent.badge}`}>
+            {accent.label}
+          </span>
+          {match.homeScorePens !== null && match.homeScorePens !== undefined && (
+            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[8px] font-extrabold tracking-wider uppercase">
+              Pens
+            </span>
+          )}
+          {match.homeScoreET !== null && match.homeScoreET !== undefined && (match.homeScorePens === null || match.homeScorePens === undefined) && (
+            <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400 text-[8px] font-extrabold tracking-wider uppercase">
+              AET
+            </span>
+          )}
+        </div>
         <span className="flex items-center gap-1 text-slate-500">
           <Calendar className="h-3 w-3" />
           {format(new Date(match.kickoffUtc), "MMM d, HH:mm")}
@@ -124,8 +136,17 @@ function MatchCard({ match }: { match: any }) {
                {homeDisplay}
              </div>
           </div>
-          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5 shrink-0">
-             {match.homeScore ?? "-"}
+          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5 shrink-0 flex items-center gap-1">
+             {match.homeScorePens !== null && match.homeScorePens !== undefined ? (
+               <>
+                 <span>{match.homeScoreET ?? match.homeScore}</span>
+                 <span className="text-[10px] text-amber-400 font-sans">({match.homeScorePens})</span>
+               </>
+             ) : (match.homeScoreET !== null && match.homeScoreET !== undefined) ? (
+               <span>{match.homeScoreET}</span>
+             ) : (
+               <span>{match.homeScore ?? "-"}</span>
+             )}
           </span>
         </div>
         
@@ -143,8 +164,17 @@ function MatchCard({ match }: { match: any }) {
                {awayDisplay}
              </div>
           </div>
-          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5 shrink-0">
-             {match.awayScore ?? "-"}
+          <span className="font-bold font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-white/5 shrink-0 flex items-center gap-1">
+             {match.awayScorePens !== null && match.awayScorePens !== undefined ? (
+               <>
+                 <span>{match.awayScoreET ?? match.awayScore}</span>
+                 <span className="text-[10px] text-amber-400 font-sans">({match.awayScorePens})</span>
+               </>
+             ) : (match.awayScoreET !== null && match.awayScoreET !== undefined) ? (
+               <span>{match.awayScoreET}</span>
+             ) : (
+               <span>{match.awayScore ?? "-"}</span>
+             )}
           </span>
         </div>
       </div>
