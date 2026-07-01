@@ -35,6 +35,10 @@ export default async function FixturesPage() {
     status: m.status,
     homeScore: m.homeScore,
     awayScore: m.awayScore,
+    homeScoreET: m.homeScoreET,
+    awayScoreET: m.awayScoreET,
+    homeScorePens: m.homeScorePens,
+    awayScorePens: m.awayScorePens,
   }));
 
   return (
