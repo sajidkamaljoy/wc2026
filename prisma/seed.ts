@@ -214,26 +214,30 @@ const KNOCKOUT_FIXTURES: [number, Stage, string, string, string][] = [
   [86, Stage.ROUND_OF_32, "Winner Group J", "Runner-up Group H", "2026-07-03T22:00:00Z"],
   [87, Stage.ROUND_OF_32, "Winner Group K", "3rd Place D/E/I/J/L", "2026-07-04T01:30:00Z"],
   [88, Stage.ROUND_OF_32, "Runner-up Group D", "Runner-up Group G", "2026-07-03T18:00:00Z"],
-  // Round of 16
-  [89, Stage.ROUND_OF_16, "Winner R32-M2", "Winner R32-M5", "2026-07-05T19:00:00Z"],
-  [90, Stage.ROUND_OF_16, "Winner R32-M1", "Winner R32-M3", "2026-07-05T22:00:00Z"],
-  [91, Stage.ROUND_OF_16, "Winner R32-M4", "Winner R32-M6", "2026-07-06T19:00:00Z"],
-  [92, Stage.ROUND_OF_16, "Winner R32-M7", "Winner R32-M8", "2026-07-06T22:00:00Z"],
-  [93, Stage.ROUND_OF_16, "Winner R32-M11", "Winner R32-M12", "2026-07-07T19:00:00Z"],
-  [94, Stage.ROUND_OF_16, "Winner R32-M9", "Winner R32-M10", "2026-07-07T22:00:00Z"],
-  [95, Stage.ROUND_OF_16, "Winner R32-M14", "Winner R32-M16", "2026-07-08T19:00:00Z"],
-  [96, Stage.ROUND_OF_16, "Winner R32-M13", "Winner R32-M15", "2026-07-08T22:00:00Z"],
-  // Quarter-Finals
-  [97, Stage.QUARTER_FINAL, "Winner R16-M1", "Winner R16-M2", "2026-07-10T19:00:00Z"], // already correct
-  [98, Stage.QUARTER_FINAL, "Winner R16-M5", "Winner R16-M6", "2026-07-10T22:00:00Z"], // was M3/M4
-  [99, Stage.QUARTER_FINAL, "Winner R16-M3", "Winner R16-M4", "2026-07-11T19:00:00Z"], // was M5/M6
-  [100, Stage.QUARTER_FINAL, "Winner R16-M7", "Winner R16-M8", "2026-07-11T22:00:00Z"], // already correct
-  // Semi-Finals
-  [101, Stage.SEMI_FINAL, "Winner QF-M1", "Winner QF-M2", "2026-07-14T22:00:00Z"],
-  [102, Stage.SEMI_FINAL, "Winner QF-M3", "Winner QF-M4", "2026-07-15T22:00:00Z"],
-  // 3rd Place
-  [103, Stage.THIRD_PLACE, "Loser SF-M1", "Loser SF-M2", "2026-07-18T19:00:00Z"],
-  // Final
+  // Round of 16 — kickoff times corrected per official FIFA/Sky Sports schedule (UTC)
+  // Sat Jul 4: Canada vs Morocco 17:00 UTC (Houston), Paraguay vs France 21:00 UTC (Philadelphia)
+  // Sun Jul 5: Brazil vs Norway 20:00 UTC (New Jersey)
+  // Mon Jul 6 00:00 UTC: Mexico vs England (Mexico City), Mon Jul 6 19:00 UTC: Portugal vs Spain (Dallas)
+  // Tue Jul 7 00:00 UTC: USA vs Belgium (Seattle), Tue Jul 7 16:00 UTC: Argentina vs Egypt (Atlanta), Tue Jul 7 20:00 UTC: Switzerland vs Colombia (Vancouver)
+  [89, Stage.ROUND_OF_16, "Winner R32-M2", "Winner R32-M5", "2026-07-04T21:00:00Z"],
+  [90, Stage.ROUND_OF_16, "Winner R32-M1", "Winner R32-M3", "2026-07-04T17:00:00Z"],
+  [91, Stage.ROUND_OF_16, "Winner R32-M4", "Winner R32-M6", "2026-07-05T20:00:00Z"],
+  [92, Stage.ROUND_OF_16, "Winner R32-M7", "Winner R32-M8", "2026-07-06T00:00:00Z"],
+  [93, Stage.ROUND_OF_16, "Winner R32-M11", "Winner R32-M12", "2026-07-06T19:00:00Z"],
+  [94, Stage.ROUND_OF_16, "Winner R32-M9", "Winner R32-M10", "2026-07-07T00:00:00Z"],
+  [95, Stage.ROUND_OF_16, "Winner R32-M14", "Winner R32-M16", "2026-07-07T16:00:00Z"],
+  [96, Stage.ROUND_OF_16, "Winner R32-M13", "Winner R32-M15", "2026-07-07T20:00:00Z"],
+  // Quarter-Finals — Thu Jul 9 20:00, Fri Jul 10 19:00, Sat Jul 11 21:00, Sun Jul 12 01:00 UTC
+  [97, Stage.QUARTER_FINAL, "Winner R16-M1", "Winner R16-M2", "2026-07-09T20:00:00Z"],
+  [98, Stage.QUARTER_FINAL, "Winner R16-M5", "Winner R16-M6", "2026-07-10T19:00:00Z"],
+  [99, Stage.QUARTER_FINAL, "Winner R16-M3", "Winner R16-M4", "2026-07-11T21:00:00Z"],
+  [100, Stage.QUARTER_FINAL, "Winner R16-M7", "Winner R16-M8", "2026-07-12T01:00:00Z"],
+  // Semi-Finals — Tue Jul 14 19:00 UTC (Dallas), Wed Jul 15 19:00 UTC (Atlanta)
+  [101, Stage.SEMI_FINAL, "Winner QF-M1", "Winner QF-M2", "2026-07-14T19:00:00Z"],
+  [102, Stage.SEMI_FINAL, "Winner QF-M3", "Winner QF-M4", "2026-07-15T19:00:00Z"],
+  // 3rd Place — Sat Jul 18 21:00 UTC (Miami)
+  [103, Stage.THIRD_PLACE, "Loser SF-M1", "Loser SF-M2", "2026-07-18T21:00:00Z"],
+  // Final — Sun Jul 19 19:00 UTC (New Jersey)
   [104, Stage.FINAL, "Winner SF-M1", "Winner SF-M2", "2026-07-19T19:00:00Z"],
 ];
 
