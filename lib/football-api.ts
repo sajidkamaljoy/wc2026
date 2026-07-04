@@ -1,8 +1,9 @@
 import type { LiveScore } from "@/types";
 import { prisma } from "./db";
-import { MatchStatus as DBStatus } from "@prisma/client";
+import { MatchStatus as DBStatus, Stage } from "@prisma/client";
 import { gradePredictionsForMatch } from "./gradePredictions";
 import { recalculateGroupStandings } from "./standings";
+import { autoResolveNextRound } from "./knockout-resolver";
 import { revalidateTag } from "next/cache";
 
 interface FootballDataMatch {
@@ -145,6 +146,7 @@ export async function getLiveScoresMapped(): Promise<LiveScore[]> {
     );
 
     let dbUpdated = false;
+    let knockoutFinished = false;
 
     for (const apiMatch of apiMatches) {
       const externalId = apiMatch.id.toString();
@@ -217,6 +219,15 @@ export async function getLiveScoresMapped(): Promise<LiveScore[]> {
             } catch (err) {
               console.error(`Error grading predictions for match ${dbMatch.id}:`, err);
             }
+            // Track if a knockout match just finished so we can propagate winners
+            if (
+              dbMatch.stage === Stage.ROUND_OF_32 ||
+              dbMatch.stage === Stage.ROUND_OF_16 ||
+              dbMatch.stage === Stage.QUARTER_FINAL ||
+              dbMatch.stage === Stage.SEMI_FINAL
+            ) {
+              knockoutFinished = true;
+            }
           }
         }
       }
@@ -224,6 +235,9 @@ export async function getLiveScoresMapped(): Promise<LiveScore[]> {
 
     if (dbUpdated) {
       await recalculateGroupStandings();
+      if (knockoutFinished) {
+        await autoResolveNextRound();
+      }
       try {
         revalidateTag("fixtures", "max");
       } catch (err) {
