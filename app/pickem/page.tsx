@@ -62,6 +62,10 @@ export default async function PickemPage() {
           status: pred.match.status,
           homeScore: pred.match.homeScore,
           awayScore: pred.match.awayScore,
+          homeScoreET: pred.match.homeScoreET,
+          awayScoreET: pred.match.awayScoreET,
+          homeScorePens: pred.match.homeScorePens,
+          awayScorePens: pred.match.awayScorePens,
           homeTeam: pred.match.homeTeam,
           awayTeam: pred.match.awayTeam,
           venue: pred.match.venue

@@ -29,6 +29,10 @@ interface SerializedMatch {
   status: string;
   homeScore: number | null;
   awayScore: number | null;
+  homeScoreET?: number | null;
+  awayScoreET?: number | null;
+  homeScorePens?: number | null;
+  awayScorePens?: number | null;
   homeTeam: { id: string; name: string; flagUrl: string | null } | null;
   awayTeam: { id: string; name: string; flagUrl: string | null } | null;
   venue: { name: string; city: string; country: string };
@@ -229,6 +233,10 @@ export function PredictionHistory({ initialPredictions }: Props) {
                 const liveData = getScore(pred.matchId);
                 const actualHomeScore = liveData?.homeScore ?? pred.match.homeScore;
                 const actualAwayScore = liveData?.awayScore ?? pred.match.awayScore;
+                const homeScoreET = liveData?.homeScoreET ?? pred.match.homeScoreET;
+                const awayScoreET = liveData?.awayScoreET ?? pred.match.awayScoreET;
+                const homeScorePens = liveData?.homeScorePens ?? pred.match.homeScorePens;
+                const awayScorePens = liveData?.awayScorePens ?? pred.match.awayScorePens;
                 const status = liveData?.status ?? pred.match.status;
                 const isLive = status === "LIVE" || status === "HALF_TIME";
                 
@@ -283,8 +291,22 @@ export function PredictionHistory({ initialPredictions }: Props) {
                         ) : (
                           <div className="flex flex-col items-center">
                             <span className={`font-mono font-extrabold text-lg sm:text-xl ${isLive ? "text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "text-slate-100"}`}>
-                              {actualHomeScore ?? 0} – {actualAwayScore ?? 0}
+                              {homeScoreET !== undefined && homeScoreET !== null && awayScoreET !== undefined && awayScoreET !== null ? (
+                                <>{homeScoreET} – {awayScoreET}</>
+                              ) : (
+                                <>{actualHomeScore ?? 0} – {actualAwayScore ?? 0}</>
+                              )}
                             </span>
+                            {homeScorePens !== undefined && homeScorePens !== null && awayScorePens !== undefined && awayScorePens !== null && (
+                              <span className="text-[9px] font-semibold text-amber-400/90 tracking-wider uppercase bg-amber-500/5 px-1.5 py-0.5 rounded border border-amber-500/10 mt-0.5">
+                                {homeScorePens}–{awayScorePens} pens
+                              </span>
+                            )}
+                            {homeScoreET !== undefined && homeScoreET !== null && (homeScorePens === undefined || homeScorePens === null) && (
+                              <span className="text-[8px] font-semibold text-slate-400 tracking-wider uppercase bg-white/5 px-1 py-0.5 rounded mt-0.5">
+                                AET
+                              </span>
+                            )}
                             {isLive && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-[9px] font-bold text-red-400 uppercase tracking-wider animate-pulse mt-0.5">
                                 Live {liveData?.minute && `• ${liveData.minute}'`}

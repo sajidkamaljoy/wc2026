@@ -46,6 +46,10 @@ export interface MatchWithTeams {
   status: MatchStatusType;
   homeScore: number | null;
   awayScore: number | null;
+  homeScoreET?: number | null;
+  awayScoreET?: number | null;
+  homeScorePens?: number | null;
+  awayScorePens?: number | null;
 }
 
 export interface PathwayRound {
@@ -73,6 +77,10 @@ export interface LiveScore {
   awayScore: number | null;
   status: MatchStatusType;
   minute?: number;
+  homeScoreET?: number | null;
+  awayScoreET?: number | null;
+  homeScorePens?: number | null;
+  awayScorePens?: number | null;
 }
 
 export type PositionType = "GK" | "DEF" | "MID" | "FWD";

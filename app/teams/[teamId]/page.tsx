@@ -113,7 +113,11 @@ export default async function TeamPage({ params }: Props) {
     venue: m.venue,
     status: m.status,
     homeScore: m.homeScore,
-    awayScore: m.awayScore
+    awayScore: m.awayScore,
+    homeScoreET: m.homeScoreET,
+    awayScoreET: m.awayScoreET,
+    homeScorePens: m.homeScorePens,
+    awayScorePens: m.awayScorePens,
   }));
 
   return (

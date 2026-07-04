@@ -26,7 +26,19 @@ export async function gradePredictionsForMatch(matchId: string) {
 
   const actualHome = match.homeScore;
   const actualAway = match.awayScore;
-  const actualOutcome = actualHome > actualAway ? 'HOME_WIN' : actualHome < actualAway ? 'AWAY_WIN' : 'DRAW';
+  
+  let actualOutcome: 'HOME_WIN' | 'AWAY_WIN' | 'DRAW' = 'DRAW';
+  if (match.stage !== "GROUP") {
+    if (match.homeScorePens !== null && match.awayScorePens !== null) {
+      actualOutcome = match.homeScorePens > match.awayScorePens ? 'HOME_WIN' : 'AWAY_WIN';
+    } else if (match.homeScoreET !== null && match.awayScoreET !== null) {
+      actualOutcome = match.homeScoreET > match.awayScoreET ? 'HOME_WIN' : 'AWAY_WIN';
+    } else {
+      actualOutcome = actualHome > actualAway ? 'HOME_WIN' : actualHome < actualAway ? 'AWAY_WIN' : 'DRAW';
+    }
+  } else {
+    actualOutcome = actualHome > actualAway ? 'HOME_WIN' : actualHome < actualAway ? 'AWAY_WIN' : 'DRAW';
+  }
 
   for (const prediction of predictions) {
     let pointsEarned = 0;

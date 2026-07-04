@@ -78,6 +78,22 @@ export const MATCH_SOURCES: Record<number, { home: number; away: number }> = {
  * Uses a backtracking search over the FIFA 2026 knockout placeholders.
  */
 export function allocateThirdPlaces(selectedGroups: string[]): Record<number, string> {
+  const sortedCombo = [...selectedGroups].sort().join("").toUpperCase();
+
+  // Official FIFA 2026 Annex C allocation for the qualified group stage 3rd places: B, D, E, F, I, J, K, L
+  if (sortedCombo === "BDEFIJKL") {
+    return {
+      74: "D", // Winner Group E vs 3rd Place Group D (Paraguay)
+      77: "F", // Winner Group I vs 3rd Place Group F (Sweden)
+      79: "E", // Winner Group A vs 3rd Place Group E (Ecuador)
+      80: "K", // Winner Group L vs 3rd Place Group K (DR Congo)
+      81: "B", // Winner Group D vs 3rd Place Group B (Bosnia & Herz.)
+      82: "I", // Winner Group G vs 3rd Place Group I (Senegal)
+      85: "J", // Winner Group B vs 3rd Place Group J (Algeria)
+      87: "L", // Winner Group K vs 3rd Place Group L (Ghana)
+    };
+  }
+
   const pools: Record<number, string[]> = {
     74: ["A", "B", "C", "D", "F"],
     77: ["C", "D", "F", "G", "H"],
