@@ -1,6 +1,6 @@
 # Technology Stack
 
-> Mapped: 2026-05-21 | Updated: 2026-05-22
+> Mapped: 2026-05-21 | Updated: 2026-07-07
 
 ## Languages & Runtime
 
@@ -26,11 +26,12 @@
 | Package | Version | Purpose |
 |---------|---------|---------|
 | `@prisma/client` | ^6.19.3 | Auto-generated DB client for PostgreSQL |
-| `date-fns` | ^4.2.1 | Date utility library — **now actively used** in `FanMood.tsx`, `TeamForm.tsx`, `NewsFeed.tsx`, `FullBracketTree.tsx` |
-| `date-fns-tz` | ^3.2.0 | Timezone-aware date formatting (declared but still unused — `lib/timezone.ts` uses raw Intl API) |
+| `@vercel/analytics` | ^2.0.1 | Dynamic web analytics for Vercel deployment |
+| `date-fns` | ^4.2.1 | Date utility library — actively used in `FanMood.tsx`, `TeamForm.tsx`, `NewsFeed.tsx`, `FullBracketTree.tsx` |
+| `date-fns-tz` | ^3.2.0 | Timezone-aware date formatting (declared but unused — `lib/timezone.ts` uses raw Intl API) |
 | `lucide-react` | ^1.16.0 | Icon library (Trophy, Calendar, Star, etc.) |
-| `sentiment` | ^5.0.2 | **[NEW]** Natural language sentiment scoring for news headlines |
-| `zod` | ^4.4.3 | Schema validation (declared but not yet used in application code) |
+| `sentiment` | ^5.0.2 | Natural language sentiment scoring for news headlines |
+| `zod` | ^4.4.3 | Schema validation for match predictions and bracket submissions |
 
 ### Development
 
@@ -48,18 +49,20 @@
 | `@testing-library/react` | ^16.3.2 | Component and UI testing helper |
 | `@testing-library/jest-dom` | ^6.9.1 | Jest-style DOM assertion utilities (`toBeInTheDocument`, etc.) |
 | `@testing-library/dom` | ^10.4.1 | Underlying DOM query utilities |
+| `@types/sentiment` | ^5.0.4 | TypeScript types for `sentiment` package |
 
 ## Build & Development
 
 | Task | Command | Notes |
 |------|---------|-------|
 | Dev Server | `npm run dev` → `next dev` | Hot reload on `http://localhost:3000` |
-| Production Build | `npm run build` → `prisma generate && next build` | Prisma client generated before Next build |
+| Production Build | `npm run build` → `prisma generate && prisma migrate deploy && next build` | Prisma client generated and migrations applied before Next build |
 | Start Production | `npm run start` → `next start` | Serves production bundle |
 | Lint | `npm run lint` → `eslint` | Uses `eslint.config.mjs` flat config |
 | DB Seed | `tsx prisma/seed.ts` | Configured via `prisma.config.ts` |
 | Run Tests | `npm run test` → `vitest run` | Executes all unit tests once |
 | Watch Tests | `npm run test:watch` → `vitest` | Watches files and re-runs tests on change |
+| Sync Scores | `npm run sync:scores` → `tsx scripts/sync-scores.ts` | Manually/cron sync scores from external football API |
 
 ## Configuration Files
 

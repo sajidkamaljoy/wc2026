@@ -1,6 +1,6 @@
 # External Integrations
 
-> Mapped: 2026-05-21 | Updated: 2026-05-22
+> Mapped: 2026-05-21 | Updated: 2026-07-07
 
 ## Database — PostgreSQL (Neon)
 
@@ -12,17 +12,20 @@
 | Region | `us-east-1` (AWS) |
 | Client Singleton | `lib/db.ts` — global singleton pattern to prevent connection exhaustion in dev |
 | Logging | Query + error in development, error-only in production |
-| Migrations | `prisma/migrations/` — 2 migrations (`init`, `add_players`) |
+| Migrations | `prisma/migrations/` — migrations history (`init`, `add_players`, plus model expansions) |
 
 ### Schema Models
 
-| Model | Primary Key | Records | Purpose |
-|-------|------------|---------|---------|
-| `Group` | String ("A"–"L") | 12 | Tournament groups |
-| `Team` | String (FIFA 3-letter code) | 48 | National teams with standings |
-| `Venue` | String (slug) | 16 | Stadium locations across 3 countries |
-| `Match` | CUID (auto) | 104 | All tournament fixtures (group + knockout) |
-| `Player` | CUID (auto) | 48×26 = 1248 | Squad rosters per team |
+| Model | Primary Key | Relations | Purpose |
+|-------|------------|-----------|---------|
+| `Group` | String ("A"–"L") | `Team[]` | Tournament groups |
+| `Team` | String (FIFA 3-letter code) | `Group`, `Match[]`, `Player[]` | National teams with standings and rosters |
+| `Venue` | String (slug) | `Match[]` | Stadium locations across USA, Mexico, and Canada |
+| `Match` | CUID (auto) | `Team` (home/away), `Venue`, `Prediction[]` | All tournament fixtures (group + knockout) |
+| `Player` | CUID (auto) | `Team` | Squad rosters (up to 26 players per team) |
+| `User` | UUID (auto) | `Prediction[]`, `BracketPrediction?` | App users identified by unique `deviceId` cookies |
+| `Prediction` | CUID (auto) | `User`, `Match` | Individual match score predictions |
+| `BracketPrediction` | CUID (auto) | `User` | Full tournament group + knockout bracket challenge pick sheet |
 
 ### Enums
 
@@ -65,7 +68,7 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 
 ---
 
-## [NEW] External API — GNews.io
+## External API — GNews.io
 
 | Property | Value |
 |----------|-------|
@@ -84,16 +87,38 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 
 ---
 
-## [NEW] External Data Source — martj42/international_results CSV
+## External API & Streams — streamed.pk (NEW)
+
+| Property | Value |
+|----------|-------|
+| Base URL | `https://streamed.pk/api` |
+| Client | `lib/streamed-api.ts` |
+| Revalidation | 30 seconds (`next: { revalidate: 30 }`) |
+| Purpose | Feeds live video streaming links directly to matches |
+
+### Endpoints Used
+
+| Function | Endpoint | Purpose |
+|----------|----------|---------|
+| `getLiveStreamsForMatch()` | `GET /matches/football` & `GET /stream/{source}/{id}` | Resolves current stream sources for a given match |
+| `getLiveMatchesFromStreamed()` | `GET /matches/live` | Retrieves matches currently being streamed live |
+| `getStreamsForStreamedMatchId()` | `GET /matches/all` & `GET /stream/{source}/{id}` | Resolves streams by specific stream ID |
+
+### Synonyms & Time Window Matcher
+
+- **Team Name Synonyms**: Resolves spelling variations between our database names and streamed.pk payload titles (e.g., handles `"United States"`, `"United States of America"`, `"USA"`, `"South Korea"`, `"Korea Republic"`).
+- **Time Offset Safety**: Matches are aligned to database fixtures within a **±4-hour window** of kickoff to avoid matching different historical or league games between the same national teams.
+
+---
+
+## External Data Source — martj42/international_results CSV
 
 | Property | Value |
 |----------|-------|
 | Source | `https://raw.githubusercontent.com/martj42/international_results/master/results.csv` |
-| Client | `app/api/teams/[teamId]/form/route.ts` |
+| Client | `app/api/teams/[teamId]/form/route.ts` & `app/api/h2h/route.ts` |
 | Revalidation | 1 hour (`next: { revalidate: 3600 }`) |
-| Purpose | Provides last 5 real match results for a team's "Recent Form" widget |
-| Parsing | CSV parsed inline — searches backwards from end of file for the 5 most recent finished matches |
-| Outcome | Calculated from home/away score columns — `W`, `D`, or `L` |
+| Purpose | Provides last 5 real match results for a team's "Recent Form" widget and parses head-to-head match histories |
 
 ---
 
@@ -104,7 +129,6 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 | Source | `https://flagcdn.com/w40/{code}.png` |
 | Usage | Team `flagUrl` field in database |
 | Loading | `<img>` tags with `loading="lazy"` |
-| Examples | `mx.png`, `gb-eng.png`, `gb-sct.png` |
 
 ---
 
@@ -112,41 +136,34 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 
 ### SSE (Server-Sent Events) — Primary
 
-| Property | Value |
-|----------|-------|
-| Endpoint | `GET /api/scores/stream` |
-| Runtime | Node.js (`export const runtime = "nodejs"`) |
-| Polling Interval | 30 seconds (server-side poller) |
-| Broadcast | Module-level `listeners` Set; only broadcasts on data change |
-| Headers | `Content-Type: text/event-stream`, `X-Accel-Buffering: no` |
+- **Endpoint**: `GET /api/scores/stream`
+- **Runtime**: Node.js (`export const runtime = "nodejs"`)
+- **Polling Interval**: 30 seconds (server-side poller)
+- **Broadcast**: Module-level `listeners` Set; only broadcasts on data change
+- **Headers**: `Content-Type: text/event-stream`, `X-Accel-Buffering: no`
 
 ### Polling — Fallback
 
-| Property | Value |
-|----------|-------|
-| Endpoint | `GET /api/scores` |
-| Interval | 30 seconds (client-side) |
-| Trigger | Falls back when SSE `EventSource` errors or is unavailable |
+- **Endpoint**: `GET /api/scores`
+- **Interval**: 30 seconds (client-side)
+- **Trigger**: Falls back when SSE `EventSource` errors or is unavailable
 
 ### Client Provider
 
 `LiveScoreProvider` (wraps entire app at root layout level):
 1. Attempts SSE connection to `/api/scores/stream`
 2. On SSE error → closes EventSource, starts 30s polling to `/api/scores`
-3. Applies scores via immutable state update with change detection
+3. Applies scores via state update with change detection
 4. Exposes `LiveScoreContext` consumed by `useLiveScores()` hook
 
 ---
 
 ## Client-Side Storage
 
-| Property | Value |
-|----------|-------|
-| Storage | `localStorage` |
-| Key | `wc2026_favorites` |
-| Format | JSON array of team ID strings (e.g., `["ARG", "ENG"]`) |
-| Hook | `hooks/useFavorites.ts` |
-| Usage | Favorites filtering on fixtures page, star indicators on team rows |
+- **Storage**: `localStorage`
+- **Key**: `wc2026_favorites`
+- **Format**: JSON array of team ID strings (e.g., `["ARG", "ENG"]`)
+- **Hook**: `hooks/useFavorites.ts`
 
 ---
 
@@ -154,12 +171,12 @@ The football-data.org API returns its own match IDs (`externalId`). The app main
 
 | Layer | Mechanism | TTL |
 |-------|-----------|-----|
-| Fixtures API | `unstable_cache` + `Cache-Control: s-maxage=30, stale-while-revalidate=300` | 30s server, 5min stale |
+| Fixtures API | `unstable_cache` + `Cache-Control: s-maxage=30` | 30s |
 | Groups API | `unstable_cache` | 60s |
 | Scores API | `unstable_cache` | 30s |
 | Teams List | `unstable_cache` | 1 hour |
 | Groups Page (SSR) | `unstable_cache` with tags `["groups"]` | 60s |
 | ID Map (in-memory) | Manual TTL check | 10 minutes |
-| News API (`getWorldCupNews`) | Next.js `fetch` revalidate | 1 hour |
-| Team News (`getTeamNews`) | Next.js `fetch` revalidate | 1 hour |
-| Team Form (CSV) | Next.js `fetch` revalidate | 1 hour |
+| CSV Mappings (in-memory) | `lib/mem-cache.ts` | 1 hour |
+| GNews Fetch | Next.js `fetch` revalidate | 1 hour |
+| streamed.pk Fetch | Next.js `fetch` revalidate | 30 seconds |

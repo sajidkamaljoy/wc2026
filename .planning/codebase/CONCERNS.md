@@ -1,6 +1,6 @@
 # Concerns & Technical Debt
 
-> Mapped: 2026-05-21 | Updated: 2026-05-22
+> Mapped: 2026-05-21 | Updated: 2026-07-07
 
 ## 🔴 High Priority
 
@@ -23,44 +23,22 @@ Although `.env*` is in `.gitignore`, the `.env` file itself is present in the wo
 
 ---
 
-### 2. No Automated Tests
-
-**Coverage:** Zero automated tests of any kind.
-
-No unit tests, integration tests, component tests, or E2E tests exist. The only verification is manual scripts (`scripts/test-api.ts`, `scripts/verify-db.ts`).
-
-**Impact:** High regression risk, especially for:
-- `lib/pathway.ts` — complex bracket calculation with nested lookups
-- `lib/football-api.ts` — external API mapping and ID translation
-- SSE stream behavior and fallback logic
-- Timezone formatting across locales
-- **[NEW]** `app/api/teams/[teamId]/form/route.ts` — CSV parsing brittle if team names differ slightly between the CSV and our DB
-
-**Recommendation:** Add at minimum:
-- Unit tests for `lib/pathway.ts` (pure logic, easy to test)
-- Unit tests for `lib/constants.ts` bracket mapping completeness
-- Integration tests for API route handlers
-- Consider Playwright for E2E flows
-
----
-
 ## 🟡 Medium Priority
 
-### 3. Unused Dependencies
+### 2. Unused Dependency: `date-fns-tz`
 
-**Files:** `package.json`
+**File:** `package.json`
 
 - `date-fns-tz` (^3.2.0) is declared as a production dependency but the codebase uses the native `Intl` API in `lib/timezone.ts` instead. No import of `date-fns-tz` was found in any application file.
-- `zod` (^4.4.3) is declared but not imported anywhere in the codebase.
-- `date-fns` was previously flagged as unused but is **now actively used** in `FanMood.tsx`, `TeamForm.tsx`, `NewsFeed.tsx`, and `FullBracketTree.tsx`.
+- **Note**: `zod` and `date-fns` were previously flagged as unused but are now actively used in the predictions validation (`lib/validations.ts`) and widgets.
 
 **Impact:** Bundle bloat, misleading dependency list.
 
-**Recommendation:** Remove `date-fns-tz` and `zod` from `package.json` if not planned for imminent use.
+**Recommendation:** Remove `date-fns-tz` from `package.json` if not planned for imminent use.
 
 ---
 
-### 4. Orphaned Client Component: `GroupGrid.tsx`
+### 3. Orphaned Client Component: `GroupGrid.tsx`
 
 **File:** `components/groups/GroupGrid.tsx`
 
@@ -72,7 +50,7 @@ The client-side `GroupGrid` component fetches group data via `/api/groups` and r
 
 ---
 
-### 5. SSE Stream Cleanup Behavior
+### 4. SSE Stream Cleanup Behavior
 
 **File:** `app/api/scores/stream/route.ts`
 
@@ -93,16 +71,11 @@ function ensurePoller() {
 
 ---
 
-### 6. In-Memory State in SSE Module
+### 5. In-Memory State in SSE Module
 
 **File:** `app/api/scores/stream/route.ts`
 
-Module-level state (`latestScores`, `listeners`, `pollInterval`) persists across requests but will be lost on:
-- Serverless function cold starts (Vercel edge)
-- Multi-instance deployments
-- Hot module reloads in development
-
-The current setup assumes a single long-lived Node.js process.
+Module-level state (`latestScores`, `listeners`, `pollInterval`) persists across requests but will be lost on serverless cold starts (Vercel edge), multi-instance deployments, or hot module reloads in development. The current setup assumes a single long-lived Node.js process.
 
 **Impact:** SSE may not work correctly in serverless/edge deployments. Not an issue for local dev or single-instance hosting.
 
@@ -110,7 +83,7 @@ The current setup assumes a single long-lived Node.js process.
 
 ---
 
-### 7. `unstable_cache` API Usage
+### 6. `unstable_cache` API Usage
 
 **Files:** `app/api/fixtures/route.ts`, `app/api/groups/route.ts`, `app/api/scores/route.ts`, `app/groups/page.tsx`
 
@@ -122,17 +95,7 @@ The `unstable_cache` import from `next/cache` is used extensively. This API may 
 
 ---
 
-### 8. Missing Error Boundaries
-
-No React Error Boundaries are implemented. A runtime error in any client component (e.g., malformed API response, null reference) will crash the entire page.
-
-**Impact:** Poor user experience on unexpected errors.
-
-**Recommendation:** Add error boundaries at the route segment level using Next.js `error.tsx` files, and wrap critical client components.
-
----
-
-### 9. [NEW] Team Form — Brittle Name Matching
+### 7. Team Form — Brittle Name Matching
 
 **File:** `app/api/teams/[teamId]/form/route.ts`
 
@@ -148,7 +111,7 @@ The form feature fetches the martj42 CSV and matches rows by comparing `homeTeam
 
 ## 🟢 Low Priority
 
-### 10. Search Modal Links to Home Team Only
+### 8. Search Modal Links to Home Team Only
 
 **File:** `components/search/SearchModal.tsx`
 
@@ -164,27 +127,23 @@ href={m.homeTeam?.id ? `/teams/${m.homeTeam.id}` : `/fixtures`}
 
 ---
 
-### 11. No Rate Limiting on API Routes
+### 9. No Rate Limiting on Standard API Routes
 
-**Files:** All `app/api/*/route.ts`
+**Files:** All `app/api/*/route.ts` (except predictions, watch streams, and bracket endpoints)
 
 API routes have no rate limiting, authentication, or abuse protection. While acceptable for a personal/fan project, this could be exploited if publicly deployed.
 
 **Impact:** Low for personal use; medium for public deployment.
 
-**Recommendation:** Add basic rate limiting middleware if deploying publicly.
+**Recommendation:** Extend `rate-limit.ts` check across all database queries and external fetch routes.
 
 ---
 
-### 12. Hardcoded Locale Strings
+### 10. Hardcoded Locale Strings
 
 **Files:** `lib/timezone.ts`, `components/search/SearchModal.tsx`
 
-Date formatting uses hardcoded locale `"en-GB"` and `"en-US"`:
-
-```typescript
-new Intl.DateTimeFormat("en-GB", { ... })
-```
+Date formatting uses hardcoded locale `"en-GB"` and `"en-US"`.
 
 **Impact:** Non-English users see English date formats regardless of browser locale.
 
@@ -192,7 +151,7 @@ new Intl.DateTimeFormat("en-GB", { ... })
 
 ---
 
-### 13. Large Seed File
+### 11. Large Seed File
 
 **File:** `prisma/seed.ts` (407 lines) + `prisma/squadsData.ts` (13,471 bytes)
 
@@ -204,26 +163,11 @@ The seed file contains inline data for all 12 groups, 48 teams, 16 venues, 104 m
 
 ---
 
-### 14. [RESOLVED] No Favicon or Open Graph Images
-
-**File:** `app/layout.tsx`
-
-**Resolution (2026-05-24):** Fully resolved. We added a comprehensive SEO metadata configuration in `app/layout.tsx` including `metadataBase`, dynamic sitemaps (`app/sitemap.ts`), dynamic crawler instructions (`app/robots.ts`), `openGraph`, and `twitter` card support. Additionally, generated and optimized a premium OpenGraph banner at `/public/og-image.jpg` (1200x630px, 137.42 KB) that is perfectly within compression limits for WhatsApp and social platforms.
-
----
-
-### 15. [NEW] FullBracketTree Uses `any` Typing
+### 12. FullBracketTree Uses `any` Typing
 
 **File:** `components/bracket/FullBracketTree.tsx`
 
-The `Props` interface and internal `MatchCard` component use `any` for the `matches` array and `match` object:
-
-```tsx
-interface Props {
-  matches: any[];
-}
-function MatchCard({ match }: { match: any }) { ... }
-```
+The `Props` interface and internal `MatchCard` component use `any` for the `matches` array and `match` object.
 
 **Impact:** Loss of TypeScript type safety in the bracket component.
 
@@ -231,10 +175,18 @@ function MatchCard({ match }: { match: any }) { ... }
 
 ---
 
-### 16. [NEW] `NEWS_API_KEY` Not Documented in `.env.example`
+### 13. `NEWS_API_KEY` Not Documented in `.env.example`
 
 The new `NEWS_API_KEY` environment variable required by `lib/news-api.ts` is not documented anywhere (no `.env.example` exists in the project).
 
 **Impact:** New contributors or deployments won't know this key is available and will silently get mock data.
 
 **Recommendation:** Create a `.env.example` file listing all required env vars: `DATABASE_URL`, `FOOTBALL_DATA_API_KEY`, `FOOTBALL_DATA_BASE_URL`, `FOOTBALL_DATA_COMPETITION_ID`, `NEWS_API_KEY`.
+
+---
+
+## 🟢 Resolved Concerns
+
+- **No Automated Tests (Resolved 2026-07-07)**: Integrated a comprehensive Vitest automated unit and UI component verification suite featuring 37 tests across 10 modules covering timezone conversions, bracket pathway algorithms, prediction grading mechanics, API endpoints, favorites hooks, and interactive timers.
+- **Missing Error Boundaries (Resolved 2026-07-07)**: Implemented route segment boundaries utilizing Next.js `error.tsx` templates rendering a reusable `<ErrorState />` layout segment.
+- **No Favicon or Open Graph Images (Resolved 2026-05-24)**: Configured root layout SEO metadata containing base URLs, site maps, robots rules, and open graph image assets.

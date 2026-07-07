@@ -1,51 +1,37 @@
 # Code Conventions
 
-> Mapped: 2026-05-21 | Updated: 2026-05-22
+> Mapped: 2026-05-21 | Updated: 2026-07-07
 
 ## Component Patterns
 
 ### "use client" Directive
 
-All interactive components explicitly declare `"use client"` at the top of the file. Server components (pages with direct Prisma access) omit the directive.
+All interactive components explicitly declare `"use client"` at the top of the file. Server components (pages with direct Prisma access, dynamic routes without hooks, error overlays) omit the directive.
 
 **Client components** (with `"use client"`):
-- `components/NavBar.tsx`
-- `components/PageWrapper.tsx`
-- `components/TimezoneBanner.tsx`
-- All `components/fixtures/*.tsx`
+- `components/NavBar.tsx`, `components/BottomNav.tsx`
+- `components/PageWrapper.tsx`, `components/TimezoneBanner.tsx`
+- All `components/fixtures/*.tsx` (including `HeadToHead.tsx`, `PredictionModal.tsx`, `PredictionInput.tsx`)
 - All `components/groups/GroupGrid.tsx`, `GroupTable.tsx`, `TeamRow.tsx`
-- All `components/live/*.tsx` (except `LiveScoreBadge.tsx` which doesn't need client hooks)
-- `components/pathway/PathwayBracket.tsx`
-- `components/search/SearchModal.tsx`
-- `components/squad/SquadView.tsx`
-- `components/bracket/FullBracketTree.tsx` **[NEW]**
-- `components/team/TeamForm.tsx` **[NEW]**
-- `components/team/FanMood.tsx` **[NEW]**
+- All `components/live/*.tsx` (except presentational badges)
+- All `components/bracket/*.tsx` (including `BracketChallenge.tsx`, `SharedBracketView.tsx`)
+- `components/pickem/PredictionHistory.tsx`
+- `app/pickem/page.tsx`
+- `app/watch/page.tsx`
 - `hooks/useFavorites.ts`
 
 **Server components** (no directive):
 - `app/groups/page.tsx` — async server component with direct Prisma query
 - `app/teams/[teamId]/page.tsx` — server component with Prisma validation
-- `app/bracket/page.tsx` — async server component with direct Prisma query **[NEW]**
+- `app/bracket/page.tsx` — async server component with direct Prisma query
+- `app/pickem/error.tsx`, `app/watch/error.tsx` — route-level error boundaries
 - `components/groups/GroupGridServer.tsx` — thin server-to-client bridge
 - `components/live/LiveScoreBadge.tsx` — pure presentational, no hooks
-- `components/news/NewsFeed.tsx` — RSC that calls `getWorldCupNews()` **[NEW]**
+- `components/news/NewsFeed.tsx` — RSC that calls `getWorldCupNews()`
 
-### Component Interface Pattern
+### Data Fetching & State Synchronization
 
-Props are defined inline or via named `Props` interface directly above the component:
-
-```tsx
-interface Props {
-  match: MatchWithTeams;
-}
-
-export function FixtureCard({ match }: Props) { ... }
-```
-
-### Data Fetching in Client Components
-
-Client components follow a consistent pattern using `useEffect` + `fetch` + cleanup flag:
+Client components follow consistent async patterns using `useEffect` + `fetch` + cleanup flag:
 
 ```tsx
 const [data, setData] = useState<T | null>(null);
@@ -72,45 +58,21 @@ useEffect(() => {
 }, [dependency]);
 ```
 
-Key conventions:
-- `active` flag prevents state updates after unmount
-- Loading state managed with `useState(true)` (optimistic loading)
-- Errors logged to console, not surfaced to UI (except `SquadView` which sets an error state)
-- `finally` always resets loading state
+### Hydration Safety (Mounted Guard Pattern)
 
-> **[NEW] Mounted guard pattern**: `FanMood.tsx` adds an additional `mounted` state (`useState(false)`) before fetching, to prevent hydration mismatches on SSR-rendered pages:
-> ```tsx
-> const [mounted, setMounted] = useState(false);
-> useEffect(() => { setMounted(true); }, []);
-> useEffect(() => { if (!mounted) return; fetch(...); }, [mounted]);
-> ```
-
-### Loading States
-
-Components render consistent loading spinners using Lucide `Loader2`:
+For components consuming browser APIs, user cookies (`deviceId`), or local storage values, a double `useEffect` mount guard is mandated to prevent hydration mismatches:
 
 ```tsx
-if (loading) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-      <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
-      <span className="text-sm font-medium tracking-wide">Loading...</span>
-    </div>
-  );
-}
+const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  setMounted(true);
+}, []);
+
+if (!mounted) return <ServerSafeFallback />;
 ```
 
-### Empty States
-
-Empty states use a consistent dashed-border container with an icon:
-
-```tsx
-<div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500
-     border border-dashed border-white/5 rounded-3xl bg-slate-900/10">
-  <Icon className="h-10 w-10 text-slate-600" />
-  <span className="text-sm font-semibold">No data available.</span>
-</div>
-```
+Used in: `KickoffTime`, `TimezoneBanner`, `Countdown`, `useFavorites`, `FanMood`, `PredictionInput`, `BracketChallenge`, `PredictionHistory`.
 
 ---
 
@@ -118,15 +80,14 @@ Empty states use a consistent dashed-border container with an icon:
 
 | Element | Convention | Examples |
 |---------|-----------|---------|
-| Components | PascalCase, named exports | `export function FixtureCard()` |
+| Components | PascalCase, named exports | `export function BracketChallenge()` |
 | Hooks | camelCase, `use` prefix | `useFavorites`, `useLiveScores` |
-| Helper functions | camelCase, file-scoped | `stageName()`, `groupByDate()`, `ordinal()` |
-| Type interfaces | PascalCase | `MatchWithTeams`, `TeamPathway`, `LiveScore` |
-| Type aliases | PascalCase + `Type` suffix | `StageType`, `MatchStatusType`, `PositionType` |
-| API routes | RESTful path segments | `/api/teams/[teamId]/pathway` |
-| CSS classes | Tailwind utility-first | No custom class names except `animate-fade-in` |
-| Constants | UPPER_SNAKE_CASE | `BRACKET`, `ID_MAP_TTL_MS`, `STAGES` |
-| Env variables | UPPER_SNAKE_CASE | `DATABASE_URL`, `FOOTBALL_DATA_API_KEY`, `NEWS_API_KEY` |
+| Helper functions | camelCase, file-scoped | `getWinner()`, `gradePredictionsForMatch()` |
+| Type interfaces | PascalCase | `MatchWithTeams`, `BracketPredictionState` |
+| Type aliases | PascalCase + `Type` suffix | `StageType`, `MatchStatusType` |
+| API routes | RESTful path segments | `/api/predict/bracket`, `/api/watch/streams` |
+| Validation schemas | camelCase + `Schema` suffix | `predictionSchema`, `bracketPredictionSchema` |
+| Constants | UPPER_SNAKE_CASE | `BRACKET`, `STREAMED_API_BASE` |
 
 ---
 
@@ -134,12 +95,12 @@ Empty states use a consistent dashed-border container with an icon:
 
 ### API Routes
 
-All API route handlers use try-catch with consistent error response:
+All API route handlers use try-catch with consistent error responses:
 
 ```tsx
 export async function GET() {
   try {
-    // ... business logic
+    // Business logic
     return NextResponse.json({ data });
   } catch (error) {
     console.error("Error description:", error);
@@ -148,128 +109,45 @@ export async function GET() {
 }
 ```
 
-### External API Client
+### Route-Level Error Boundaries
 
-`lib/football-api.ts` uses defensive patterns:
-- Returns empty array `[]` on any API error
-- Returns mock `{ matches: [] }` if no API key configured
-- Catches errors silently in `getLiveScores()` to prevent app crashes
+Next.js page folders include a co-located `error.tsx` (a client component that receives the error and reset callback) to prevent minor page glitches from crashing the entire browser session.
 
-`lib/news-api.ts` **[NEW]** uses mock-first defensive patterns:
-- Returns mock articles array if `NEWS_API_KEY` is absent (never null/crash)
-- Logs errors and returns a single fallback mock on any API error
-- De-duplicates by normalized title to avoid repeated headlines
+---
 
-### Client Components
+## Caching & Rate Limiting
 
-- Errors are logged via `console.error` — no user-facing error toasts
-- `SquadView` is the only component that sets an error state string for display
-- Other components silently fall back to empty/default states
+### Shared In-Memory Caching (`lib/mem-cache.ts`)
+
+For slow or rate-limited external resources (like fetching the martj42 match CSV file), utilize `mem-cache.ts` with a TTL value:
+
+```typescript
+const text = await memCache("cache-key", fetchFunction, 3600_000); // 1 hour
+```
+
+### In-Memory Rate Limiting (`lib/rate-limit.ts`)
+
+Protect mutable endpoints (submissions, form postings) against script abuses:
+
+```typescript
+const ip = getClientIp(req);
+const limitResult = rateLimit(ip, 10); // 10 request limit per minute
+if (!limitResult.success) {
+  return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+}
+```
 
 ---
 
 ## Import Patterns
 
-### Path Alias
-
-All internal imports use the `@/` path alias:
+All internal imports use the `@/` path alias pointing to the workspace root:
 
 ```tsx
 import { prisma } from "@/lib/db";
-import type { MatchWithTeams } from "@/types";
-import { FixtureCard } from "@/components/fixtures/FixtureCard";
+import type { BracketPredictionState } from "@/types";
+import { BracketChallenge } from "@/components/bracket/BracketChallenge";
 ```
 
-### Type-Only Imports
-
-`import type` is used consistently for type-only imports:
-
-```tsx
-import type { Metadata } from "next";
-import type { LiveScore } from "@/types";
-import type { TeamPathway, PathwayRound } from "@/types";
-```
-
-### Barrel Exports
-
-- `types/index.ts` exports all shared types from a single file
-- Component directories do NOT use barrel exports (direct file imports)
-
----
-
-## Styling Conventions
-
-### Tailwind CSS v4
-
-- All styling is via Tailwind utility classes inline
-- No CSS modules, no styled-components, no separate `.css` files per component
-- Single `globals.css` with minimal custom CSS (variables + 1 keyframe animation)
-
-### Design System Tokens
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| Background | `bg-slate-950` (#020617) | App background, dark mode |
-| Text primary | `text-slate-100` | Body text |
-| Text muted | `text-slate-400` / `text-slate-500` | Secondary text, labels |
-| Accent gold | `text-amber-400`, `bg-amber-500/10` | Active states, highlights, points |
-| Live/danger | `text-red-400`, `bg-red-500/10` | Live match indicators, negative sentiment |
-| Success/qualify | `text-emerald-400`, `bg-emerald-500/10` | Qualification zone, positive sentiment |
-| Warning | `text-amber-300`, `bg-amber-500/5` | Third-place conditional |
-| Border subtle | `border-white/5`, `border-white/10` | Card borders, dividers |
-| Glassmorphism | `backdrop-blur-md`, `bg-slate-950/80` | NavBar, modals |
-
-### Responsive Pattern
-
-Mobile-first with Tailwind breakpoints:
-- Mobile: icon-only nav items, collapsed badges, stacked layouts
-- `sm:` — show nav labels, expand badges
-- `md:` — side-by-side fixture card layout, TeamForm horizontal scroll
-- `lg:` — wider content area
-- `xl:` — 3-column group grid
-
-### Animation Classes
-
-| Class | Source | Usage |
-|-------|-------|-------|
-| `animate-fade-in` | Custom keyframe in `globals.css` | Page transitions via `PageWrapper` |
-| `animate-spin` | Tailwind built-in | Loading spinners |
-| `animate-pulse` | Tailwind built-in | Live indicator, preliminary squad badge, FanMood skeleton |
-| `animate-ping` | Tailwind built-in | Live dot ripple effect, sentiment indicator dot |
-
----
-
-## SEO Patterns
-
-Each page exports metadata via the `Metadata` type:
-
-```tsx
-export const metadata: Metadata = {
-  title: "Page Title — FIFA World Cup 2026™",
-  description: "Page description for search engines.",
-};
-```
-
-- Root layout sets base metadata with keywords and authors
-- Team detail page uses `generateMetadata()` for dynamic team-specific metadata
-- Bracket page **[NEW]** exports static metadata
-- `<h1>` used once per page with gradient text treatment
-
----
-
-## Hydration Safety
-
-Components that depend on browser APIs (timezone, localStorage) use the pattern:
-
-```tsx
-const [clientData, setClientData] = useState<T | null>(null);
-
-useEffect(() => {
-  // Browser-only logic
-  setClientData(computedValue);
-}, []);
-
-if (!clientData) return <ServerSafeFallback />;
-```
-
-Used in: `KickoffTime`, `TimezoneBanner`, `Countdown`, `useFavorites`, `FanMood` **[NEW]**
+Consistently use `import type` for type definitions.
+Do not use barrel exports in individual component subfolders; import directly from component paths (e.g. `import { Countdown } from "@/components/fixtures/Countdown"`).
