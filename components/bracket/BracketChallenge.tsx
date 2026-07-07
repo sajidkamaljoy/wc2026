@@ -33,6 +33,9 @@ export function BracketChallenge() {
     toggleThirdPlace,
     pickWinner,
     resetBracket,
+    submitBracket,
+    syncWithRealTournament,
+    isSyncing,
     isGroupsCompleted,
     isThirdPlacesCompleted,
     knockoutMatchesCount,
@@ -43,6 +46,28 @@ export function BracketChallenge() {
   const [activeTab, setActiveTab] = useState<"groups" | "wildcard" | "bracket" | "leaderboard">("groups");
   const [copiedShare, setCopiedShare] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [finishedMatchIds, setFinishedMatchIds] = useState<Set<number>>(new Set());
+  const [showSyncConfirm, setShowSyncConfirm] = useState(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
+
+  // Fetch finished matches from the database to apply lock styling
+  useEffect(() => {
+    async function fetchFinishedMatches() {
+      try {
+        const res = await fetch("/api/fixtures");
+        const data = await res.json();
+        if (data.matches) {
+          const finished = data.matches
+            .filter((m: any) => m.status === "FINISHED" && m.matchNumber >= 73 && m.matchNumber <= 104)
+            .map((m: any) => m.matchNumber);
+          setFinishedMatchIds(new Set(finished));
+        }
+      } catch (err) {
+        console.error("Error loading finished matches for lock styling:", err);
+      }
+    }
+    fetchFinishedMatches();
+  }, []);
 
   // Sync theme state with HTML class list
   useEffect(() => {
@@ -156,11 +181,12 @@ export function BracketChallenge() {
 
         <div className="flex flex-row md:flex-col gap-3 justify-end items-center md:items-stretch">
           <button
-            onClick={syncAllGroupsWithStandings}
+            onClick={() => setShowSyncConfirm(true)}
+            disabled={isSyncing}
             className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10 hover:text-white transition-all cursor-pointer grow text-center flex items-center justify-center gap-2"
           >
-            <RefreshCw className="h-4 w-4" />
-            Sync Live Standings
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+            {isSyncing ? "Syncing..." : "Sync Real Knockouts"}
           </button>
           <button
             onClick={resetBracket}
@@ -426,6 +452,7 @@ export function BracketChallenge() {
                           awayTeam={match?.away}
                           winnerId={knockoutPicks[matchNum]}
                           onPickWinner={pickWinner}
+                          isLocked={finishedMatchIds.has(matchNum)}
                         />
                       );
                     })}
@@ -452,6 +479,7 @@ export function BracketChallenge() {
                           onPickWinner={pickWinner}
                           homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
                           awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
+                          isLocked={finishedMatchIds.has(matchNum)}
                         />
                       );
                     })}
@@ -478,6 +506,7 @@ export function BracketChallenge() {
                           onPickWinner={pickWinner}
                           homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
                           awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
+                          isLocked={finishedMatchIds.has(matchNum)}
                         />
                       );
                     })}
@@ -504,6 +533,7 @@ export function BracketChallenge() {
                           onPickWinner={pickWinner}
                           homePlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.home}`}
                           awayPlaceholder={`Winner Match ${MATCH_SOURCES[matchNum]?.away}`}
+                          isLocked={finishedMatchIds.has(matchNum)}
                         />
                       );
                     })}
@@ -526,6 +556,7 @@ export function BracketChallenge() {
                       onPickWinner={pickWinner}
                       homePlaceholder="Loser Match 101"
                       awayPlaceholder="Loser Match 102"
+                      isLocked={finishedMatchIds.has(103)}
                     />
                   </div>
 
@@ -544,6 +575,7 @@ export function BracketChallenge() {
                       onPickWinner={pickWinner}
                       homePlaceholder="Winner Match 101"
                       awayPlaceholder="Winner Match 102"
+                      isLocked={finishedMatchIds.has(104)}
                     />
                   </div>
                 </div>
@@ -601,6 +633,65 @@ export function BracketChallenge() {
         {/* Tab 4: Leaderboard */}
         {activeTab === "leaderboard" && <BracketLeaderboard />}
       </div>
+
+      {/* Confirmation Modal */}
+      {showSyncConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full flex flex-col gap-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+              Sync predictions with real tournament?
+            </h3>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              This will update your group rankings to match the official database standings and auto-populate all completed knockout matches with real-world winners.
+            </p>
+            <p className="text-xs text-amber-400/80">
+              Note: Custom picks for upcoming rounds will be retained where possible, but will cascade delete if upstream matchups have changed.
+            </p>
+            <div className="flex justify-end gap-3 mt-2">
+              <button
+                onClick={() => setShowSyncConfirm(false)}
+                className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl border border-white/10 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setShowSyncConfirm(false);
+                  const result = await syncWithRealTournament();
+                  if (result && result.success) {
+                    setSyncStatusMsg(`Successfully synced! Updated ${result.updatedCount} finished matches.`);
+                  } else {
+                    setSyncStatusMsg("Bracket is already up to date.");
+                  }
+                  setTimeout(() => setSyncStatusMsg(null), 4000);
+                  
+                  // Reload finished matches lock list
+                  const res = await fetch("/api/fixtures");
+                  const data = await res.json();
+                  if (data.matches) {
+                    const finished = data.matches
+                      .filter((m: any) => m.status === "FINISHED" && m.matchNumber >= 73 && m.matchNumber <= 104)
+                      .map((m: any) => m.matchNumber);
+                    setFinishedMatchIds(new Set(finished));
+                  }
+                }}
+                className="px-4 py-2 text-sm font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl transition-all cursor-pointer"
+              >
+                Confirm Sync
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sync success toast message */}
+      {syncStatusMsg && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-fade-in">
+          <CheckCircle className="h-5 w-5 animate-pulse" />
+          <span className="text-sm font-medium">{syncStatusMsg}</span>
+        </div>
+      )}
     </div>
   );
 }

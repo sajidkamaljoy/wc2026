@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, ChevronRight } from "lucide-react";
+import { Award, ChevronRight, Lock } from "lucide-react";
 import { Team } from "@/hooks/useBracketPrediction";
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   onPickWinner: (matchNumber: number, winnerId: string) => void;
   homePlaceholder?: string;
   awayPlaceholder?: string;
+  isLocked?: boolean;
 }
 
 export function BracketMatchCard({
@@ -23,29 +24,35 @@ export function BracketMatchCard({
   onPickWinner,
   homePlaceholder = "TBD",
   awayPlaceholder = "TBD",
+  isLocked = false,
 }: Props) {
   const isHomeSelected = homeTeam && winnerId === homeTeam.id;
   const isAwaySelected = awayTeam && winnerId === awayTeam.id;
   const hasSelected = isHomeSelected || isAwaySelected;
 
   const handleSelectHome = () => {
-    if (homeTeam) onPickWinner(matchNumber, homeTeam.id);
+    if (homeTeam && !isLocked) onPickWinner(matchNumber, homeTeam.id);
   };
 
   const handleSelectAway = () => {
-    if (awayTeam) onPickWinner(matchNumber, awayTeam.id);
+    if (awayTeam && !isLocked) onPickWinner(matchNumber, awayTeam.id);
   };
 
   return (
     <div
       className={`flex flex-col rounded-xl border p-4 bg-slate-900/40 backdrop-blur-md transition-all duration-300 relative ${
-        hasSelected
+        isLocked
+          ? "border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)] bg-slate-900/60 opacity-85"
+          : hasSelected
           ? "border-amber-500/40 shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-slate-900/80"
           : "border-white/5 hover:border-white/10 hover:bg-slate-900/60"
       }`}
     >
       <div className="flex justify-between items-center text-[10px] uppercase font-bold text-slate-500 mb-3 border-b border-white/5 pb-2">
-        <span>Match {matchNumber}</span>
+        <span className="flex items-center gap-1.5">
+          Match {matchNumber}
+          {isLocked && <Lock className="h-3 w-3 text-emerald-400" />}
+        </span>
         <span className="text-amber-400 font-mono tracking-wider">{stageLabel}</span>
       </div>
 
@@ -53,11 +60,11 @@ export function BracketMatchCard({
         {/* Home Team */}
         <button
           onClick={handleSelectHome}
-          disabled={!homeTeam}
+          disabled={!homeTeam || isLocked}
           className={`flex items-center justify-between p-2 rounded-lg transition-all text-left ${
-            homeTeam
+            homeTeam && !isLocked
               ? "cursor-pointer hover:bg-white/5"
-              : "cursor-not-allowed opacity-50"
+              : "cursor-not-allowed opacity-60"
           } ${
             isHomeSelected
               ? "bg-amber-500/10 text-white font-bold ring-1 ring-amber-500/30"
@@ -85,7 +92,7 @@ export function BracketMatchCard({
             {isHomeSelected && (
               <Award className="h-4 w-4 text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]" />
             )}
-            {homeTeam && !isHomeSelected && (
+            {homeTeam && !isHomeSelected && !isLocked && (
               <ChevronRight className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400" />
             )}
           </div>
@@ -94,11 +101,11 @@ export function BracketMatchCard({
         {/* Away Team */}
         <button
           onClick={handleSelectAway}
-          disabled={!awayTeam}
+          disabled={!awayTeam || isLocked}
           className={`flex items-center justify-between p-2 rounded-lg transition-all text-left ${
-            awayTeam
+            awayTeam && !isLocked
               ? "cursor-pointer hover:bg-white/5"
-              : "cursor-not-allowed opacity-50"
+              : "cursor-not-allowed opacity-60"
           } ${
             isAwaySelected
               ? "bg-amber-500/10 text-white font-bold ring-1 ring-amber-500/30"
@@ -126,7 +133,7 @@ export function BracketMatchCard({
             {isAwaySelected && (
               <Award className="h-4 w-4 text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]" />
             )}
-            {awayTeam && !isAwaySelected && (
+            {awayTeam && !isAwaySelected && !isLocked && (
               <ChevronRight className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400" />
             )}
           </div>

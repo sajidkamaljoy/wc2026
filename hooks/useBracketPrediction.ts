@@ -33,6 +33,7 @@ export function useBracketPrediction() {
   const [knockoutPicks, setKnockoutPicks] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Helper to map team ID to full Team details
   const teamsMap = useMemo(() => {
@@ -125,6 +126,28 @@ export function useBracketPrediction() {
     localStorage.setItem("bracket_groupRankings", JSON.stringify(rankings));
     localStorage.setItem("bracket_thirdPlaces", JSON.stringify(thirds));
     localStorage.setItem("bracket_knockoutPicks", JSON.stringify(picks));
+  };
+
+  const savePredictionRemote = async (
+    rankings: Record<string, string[]>,
+    thirds: string[],
+    picks: Record<number, string>
+  ) => {
+    try {
+      const res = await fetch("/api/predict/bracket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupRankings: rankings,
+          thirdPlaces: thirds,
+          knockoutPicks: picks,
+        }),
+      });
+      return res.ok;
+    } catch (e) {
+      console.warn("Could not save prediction to database", e);
+      return false;
+    }
   };
 
   // 1. Group Stage Re-ordering
@@ -303,10 +326,6 @@ export function useBracketPrediction() {
         const targetWinner = newPicks[targetId];
         if (targetWinner) {
           // If the target winner is no longer one of the qualified teams for that match, clear it
-          const nextMatchTeams = knockoutMatches[targetId];
-          // Note: since knockoutMatches is computed reactively from knockoutPicks, we can check based on new picks
-          const homeId = knockoutPicks[targetId === 104 ? 101 : (targetId === 103 ? 101 : (targetId - 89) * 2 + 73)]; // simplified helper, but let's be bulletproof:
-          // Just check if targetWinner is still in the home/away slot
           const finalMatches = getPredictiveMatchTeams(targetId, newPicks);
           if (targetWinner !== finalMatches.homeId && targetWinner !== finalMatches.awayId) {
             delete newPicks[targetId];
@@ -344,6 +363,181 @@ export function useBracketPrediction() {
     }
     // Final (104)
     return { homeId: picksState[101], awayId: picksState[102] };
+  };
+
+  // Sync predictions with real database tournament matches
+  const syncWithRealTournament = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/fixtures");
+      const data = await res.json();
+      if (!data.matches) {
+        throw new Error("Failed to fetch fixtures");
+      }
+
+      const dbMatches = data.matches;
+
+      // 1. Sync group stage rankings
+      const nextRankings: Record<string, string[]> = {};
+      const allThirds: {
+        teamId: string;
+        groupId: string;
+        points: number;
+        gd: number;
+        gf: number;
+      }[] = [];
+
+      for (const g of groups) {
+        nextRankings[g.id] = g.teams.map((t) => t.id);
+        const thirdTeam = g.teams[2];
+        if (thirdTeam) {
+          allThirds.push({
+            teamId: thirdTeam.id,
+            groupId: g.id,
+            points: thirdTeam.points || 0,
+            gd: (thirdTeam.goalsFor || 0) - (thirdTeam.goalsAgainst || 0),
+            gf: thirdTeam.goalsFor || 0,
+          });
+        }
+      }
+
+      // 2. Determine best 8 third-place teams
+      const sortedThirds = [...allThirds].sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.gd !== a.gd) return b.gd - a.gd;
+        if (b.gf !== a.gf) return b.gf - a.gf;
+        return a.teamId.localeCompare(b.teamId);
+      });
+
+      const nextThirds = sortedThirds.slice(0, 8).map((t) => t.groupId);
+
+      // 3. Sync knockout matches
+      const finishedMatches = dbMatches.filter(
+        (m: any) => m.matchNumber >= 73 && m.matchNumber <= 104 && m.status === "FINISHED"
+      );
+
+      const getMatchWinner = (match: any): string | null => {
+        if (!match.homeTeamId || !match.awayTeamId) return null;
+        const home = match.homeScore ?? 0;
+        const away = match.awayScore ?? 0;
+        if (home > away) return match.homeTeamId;
+        if (away > home) return match.awayTeamId;
+
+        const homeET = match.homeScoreET;
+        const awayET = match.awayScoreET;
+        if (homeET !== null && awayET !== null) {
+          if (homeET > awayET) return match.homeTeamId;
+          if (awayET > homeET) return match.awayTeamId;
+        }
+
+        const homePens = match.homeScorePens;
+        const awayPens = match.awayScorePens;
+        if (homePens !== null && awayPens !== null) {
+          if (homePens > awayPens) return match.homeTeamId;
+          if (awayPens > homePens) return match.awayTeamId;
+        }
+
+        return null;
+      };
+
+      const finishedWinners: Record<number, string> = {};
+      for (const m of finishedMatches) {
+        const winnerId = getMatchWinner(m);
+        if (winnerId) {
+          finishedWinners[m.matchNumber] = winnerId;
+        }
+      }
+
+      const thirdPlaceAssignments = allocateThirdPlaces(nextThirds);
+
+      const getR32Teams = (mId: number): { homeId?: string; awayId?: string } => {
+        switch (mId) {
+          case 73: return { homeId: nextRankings["A"]?.[1], awayId: nextRankings["B"]?.[1] };
+          case 74: return { homeId: nextRankings["E"]?.[0], awayId: nextRankings[thirdPlaceAssignments[74]]?.[2] };
+          case 75: return { homeId: nextRankings["F"]?.[0], awayId: nextRankings["C"]?.[1] };
+          case 76: return { homeId: nextRankings["C"]?.[0], awayId: nextRankings["F"]?.[1] };
+          case 77: return { homeId: nextRankings["I"]?.[0], awayId: nextRankings[thirdPlaceAssignments[77]]?.[2] };
+          case 78: return { homeId: nextRankings["E"]?.[1], awayId: nextRankings["I"]?.[1] };
+          case 79: return { homeId: nextRankings["A"]?.[0], awayId: nextRankings[thirdPlaceAssignments[79]]?.[2] };
+          case 80: return { homeId: nextRankings["L"]?.[0], awayId: nextRankings[thirdPlaceAssignments[80]]?.[2] };
+          case 81: return { homeId: nextRankings["D"]?.[0], awayId: nextRankings[thirdPlaceAssignments[81]]?.[2] };
+          case 82: return { homeId: nextRankings["G"]?.[0], awayId: nextRankings[thirdPlaceAssignments[82]]?.[2] };
+          case 83: return { homeId: nextRankings["K"]?.[1], awayId: nextRankings["L"]?.[1] };
+          case 84: return { homeId: nextRankings["H"]?.[0], awayId: nextRankings["J"]?.[1] };
+          case 85: return { homeId: nextRankings["B"]?.[0], awayId: nextRankings[thirdPlaceAssignments[85]]?.[2] };
+          case 86: return { homeId: nextRankings["J"]?.[0], awayId: nextRankings["H"]?.[1] };
+          case 87: return { homeId: nextRankings["K"]?.[0], awayId: nextRankings[thirdPlaceAssignments[87]]?.[2] };
+          case 88: return { homeId: nextRankings["D"]?.[1], awayId: nextRankings["G"]?.[1] };
+          default: return {};
+        }
+      };
+
+      const nextPicks: Record<number, string> = {};
+
+      const getLocalTeams = (mId: number): { homeId?: string; awayId?: string } => {
+        if (mId <= 88) {
+          return getR32Teams(mId);
+        }
+        if (mId === 103) {
+          const getLoserId = (sfId: number) => {
+            const sfTeams = getLocalTeams(sfId);
+            const winner = nextPicks[sfId];
+            if (!sfTeams.homeId || !sfTeams.awayId || !winner) return undefined;
+            return sfTeams.homeId === winner ? sfTeams.awayId : sfTeams.homeId;
+          };
+          return { homeId: getLoserId(101), awayId: getLoserId(102) };
+        }
+        if (mId === 104) {
+          return { homeId: nextPicks[101], awayId: nextPicks[102] };
+        }
+        const source = MATCH_SOURCES[mId];
+        if (source) {
+          return { homeId: nextPicks[source.home], awayId: nextPicks[source.away] };
+        }
+        return {};
+      };
+
+      for (let mId = 73; mId <= 104; mId++) {
+        if (finishedWinners[mId]) {
+          nextPicks[mId] = finishedWinners[mId];
+        } else {
+          // Unplayed: check if existing user prediction is still qualified
+          const existingPick = knockoutPicks[mId];
+          if (existingPick) {
+            const { homeId, awayId } = getLocalTeams(mId);
+            if (existingPick === homeId || existingPick === awayId) {
+              nextPicks[mId] = existingPick;
+            }
+          }
+        }
+      }
+
+      setGroupRankings(nextRankings);
+      setThirdPlaces(nextThirds);
+      setKnockoutPicks(nextPicks);
+      saveToStorage(nextRankings, nextThirds, nextPicks);
+
+      const nextGroupsCompleted = groups.length > 0 && Object.keys(nextRankings).length === 12;
+      const nextThirdPlacesCompleted = nextThirds.length === 8;
+      const nextKnockoutMatchesCount = Object.keys(nextPicks).length;
+      const nextIsBracketComplete = nextGroupsCompleted && nextThirdPlacesCompleted && nextKnockoutMatchesCount === 32;
+
+      if (nextIsBracketComplete) {
+        setIsSubmitted(true);
+        localStorage.setItem("bracket_isSubmitted", "true");
+      } else {
+        setIsSubmitted(false);
+        localStorage.setItem("bracket_isSubmitted", "false");
+      }
+
+      await savePredictionRemote(nextRankings, nextThirds, nextPicks);
+      return { success: true, updatedCount: finishedMatches.length };
+    } catch (err) {
+      console.error("Error syncing bracket predictions:", err);
+      return { success: false, error: err };
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Clear all picks
@@ -408,6 +602,8 @@ export function useBracketPrediction() {
     pickWinner,
     resetBracket,
     submitBracket,
+    syncWithRealTournament,
+    isSyncing,
     isGroupsCompleted,
     isThirdPlacesCompleted,
     knockoutMatchesCount,
