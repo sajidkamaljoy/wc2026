@@ -8,7 +8,18 @@ An interactive, premium web application built for soccer fans to follow the 104-
 
 Empower fans with beautiful, real-time, and personalized World Cup insights that adapt flawlessly to their viewing environment and device.
 
-## Current Milestone: v1.1 Bracket Auto-Sync
+## Current Milestone: Planning Next Milestone
+
+**Goal:** Refine prediction engine and add gamification analytics.
+
+**Target features:**
+- **SYNC-05**: Auto-merge bracket: Automatically merge database updates without wiping manual selections.
+- **SYNC-06**: Score variance analyzer: Visual overlay showing point diffs between user picks and live results.
+
+## Past Milestones
+
+<details>
+<summary>v1.1 Bracket Auto-Sync (Shipped 2026-07-07)</summary>
 
 **Goal:** Enable fans to automatically synchronize their bracket predictions with the latest real-time database knockout fixtures.
 
@@ -16,6 +27,8 @@ Empower fans with beautiful, real-time, and personalized World Cup insights that
 - UI button in Bracket Challenge to trigger auto-sync
 - Pull actual database match results to resolve completed knockouts in the user's prediction sheet
 - Transition seamlessly from group standings sync to knockout stage progression
+
+</details>
 
 ## Requirements
 
@@ -33,13 +46,15 @@ Empower fans with beautiful, real-time, and personalized World Cup insights that
 - ✓ **Pick'em Gamification**: Frictionless predictions on upcoming matches with anonymous device cookies (Phase 2).
 - ✓ **Scoring Engine**: Precise backend scoring (+3 exact, +1 outcome) running when results update (Phase 2).
 - ✓ **Global Leaderboard**: Standings page (`/pickem`) showing top 50 fans, nicknames, and past submissions (Phase 2).
+- ✓ **Bracket Auto-Sync UI**: UI button in Bracket Challenge to trigger auto-sync (Phase 3).
+- ✓ **Knockout Stage Auto-Sync**: Pull actual database match results to resolve completed knockouts in the user's prediction sheet (Phase 3).
+- ✓ **Custom Picks Preservation**: Retain user's custom picks for upcoming/unplayed matches during sync (Phase 3).
+- ✓ **Confirmation Dialog & Toast**: Warning modal before pick override and success toast feedback (Phase 3).
 
 ### Active
 
-- [ ] **SYNC-01**: Add a "Sync with Real Knockouts" button to the Bracket Challenge interface.
-- [ ] **SYNC-02**: Pull current database knockout results to auto-populate played matches.
-- [ ] **SYNC-03**: Retain user's custom picks for all upcoming/unplayed matches during sync.
-
+- [ ] **SYNC-05**: Auto-merge bracket: Automatically merge database updates without wiping manual selections.
+- [ ] **SYNC-06**: Score variance analyzer: Visual overlay showing point diffs between user picks and live results.
 
 ### Out of Scope
 
@@ -65,10 +80,14 @@ Empower fans with beautiful, real-time, and personalized World Cup insights that
 | **Anonymous Device Identity** | Bypasses all signup/login friction, dramatically improving prediction submission rates. | ✓ Validated (Phase 2) |
 | **+3 / +1 Points Scoring Engine** | Provides simple, standard game mechanics (+3 for exact score, +1 for correct outcome/winner) easy for fans to track. | ✓ Validated (Phase 2) |
 | **Dedicated `/pickem` Standings Hub** | Provides a comprehensive dashboard for user profiles, nicknames editing, prediction histories, and global top 50. | ✓ Validated (Phase 2) |
+| **Auto-Sync Button Toolbar Integration** | Integrates the sync button in the global actions header alongside Reset Bracket for visibility across all tabs. | ✓ Validated (Phase 3) |
+| **Cascading Downstream Deletes** | Clears invalid user predictions when sync updates modify parent matchup teams, preventing invalid states. | ✓ Validated (Phase 3) |
+| **Confirmation Modal** | Prevents accidental pick overrides on unplayed predictions by prompting the user before running sync. | ✓ Validated (Phase 3) |
+| **Finished Match Locking** | Locks finished matches dynamically based on DB state to prevent retroactively altering historical picks. | ✓ Validated (Phase 3) |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-05-22 after Phase 2 completion*
+*Last updated: 2026-07-07 after v1.1 milestone completion*
