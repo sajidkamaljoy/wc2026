@@ -8,6 +8,7 @@ A cohesive roadmap designed to implement a high-contrast, premium light theme to
 
 - [x] **Phase 1: Light Theme Toggle & Responsive Polishing** - Integrate a hydration-safe theme toggle, establish a beautiful slate-50/white & gold light palette, and polish responsiveness for all views.
 - [x] **Phase 2: Match Predictions & Fan Pick'em Game** - Implement a login-free match outcome prediction system with an anonymous device-session cookie, scoring calculations, and a global leaderboard.
+- [ ] **Phase 3: Bracket Predictions Auto-Sync** - Add a button to synchronize the user's bracket challenge prediction picks with actual tournament results from the database.
 
 ## Phase Details
 
@@ -45,12 +46,31 @@ Plans:
 Plans:
 - [x] 02-01: Build database schema, backend API routes, grading logic, and frontend interactive components for Pick'em game.
 
+---
+
+### Phase 3: Bracket Predictions Auto-Sync
+**Goal**: Add a button to synchronize the user's bracket challenge prediction picks with actual tournament results from the database.
+**Mode**: standard
+**Depends on**: Phase 2
+**Requirements**: [SYNC-01, SYNC-02, SYNC-03, SYNC-04]
+**Success Criteria** (what must be TRUE):
+  1. User can click a "Sync with Real Knockouts" button in the Bracket Challenge UI.
+  2. Auto-sync populates all completed knockout matches using actual database outcomes.
+  3. User's manual picks for upcoming matches are retained.
+  4. Confirmation dialog warns user before overwriting manual selections.
+**Plans**: 1 plan
+
+Plans:
+- [ ] 03-01: Build bracket sync logic, confirmation modal, and lock visual states in the client/server hooks and Bracket Challenge UI.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1, 2
+Phases execute in numeric order: 1, 2, 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Light Theme Toggle & Responsive Polishing | 3/3 | Completed | 2026-05-22 |
 | 2. Match Predictions & Fan Pick'em Game | 1/1 | Completed | 2026-05-22 |
+| 3. Bracket Predictions Auto-Sync | 0/1 | Active | — |
+
