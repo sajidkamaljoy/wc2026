@@ -1,41 +1,34 @@
-# Requirements: World Cup 2026 Theme & Responsiveness
+# Requirements: World Cup 2026 Bracket Auto-Sync
 
-**Defined:** 2026-05-22
-**Core Value:** Empower fans with a beautiful, real-time, and personalized World Cup experience that adapts flawlessly to their viewing environment and device.
+**Defined:** 2026-07-07
+**Core Value:** Empower fans with beautiful, real-time, and personalized World Cup insights that adapt flawlessly to their viewing environment and device.
 
 ## v1 Requirements
 
-Requirements for theme toggle and mobile responsiveness optimization.
+Requirements for adding bracket auto-sync and live integration.
 
-### Theme Support
+### Bracket Auto-Sync
 
-- [ ] **THEME-01**: Build a hydration-safe custom React hook `useTheme` or provider with local storage persistence (`wc2026_theme`, default `dark`).
-- [ ] **THEME-02**: Toggle the `dark` class on the `<html>` element dynamically based on theme state to leverage Tailwind CSS v4 `dark:` modifiers.
-- [ ] **THEME-03**: Define a premium light theme palette in `app/globals.css` with a crisp white/slate-50 background, slate-950 text, and clean dark borders, retaining signature amber-400 highlights.
-- [ ] **THEME-04**: Design a Lucide Sun/Moon toggle button positioned in the Header-Right next to the favorites star button, accessible and fully responsive on all device sizes.
-- [ ] **THEME-05**: Adapt all existing custom views and pages (fixtures, standings, bracket, squad, news) to look gorgeous under both light and dark themes.
-
-### Mobile Responsiveness
-
-- [ ] **RESP-01**: Audit and refine all layout elements to ensure 100% responsiveness on mobile viewports (down to 320px width) without horizontal scroll or overflow bugs.
-- [ ] **RESP-02**: Ensure the tournament bracket view handles mobile screens elegantly (e.g. through smooth horizontal overflow scroll or compact representation).
-- [ ] **RESP-03**: Verify all interactive elements (favorites stars, sentiment ratings, squads list) have comfortable touch targets (minimum 44x44px) on mobile viewports.
+- [ ] **SYNC-01**: Add a "Sync with Real Knockouts" button in the Bracket Challenge interface.
+- [ ] **SYNC-02**: Pull current database knockout results to auto-resolve already played knockout matches in the user's prediction sheet.
+- [ ] **SYNC-03**: Retain user's custom picks for all upcoming/unplayed matches during sync.
+- [ ] **SYNC-04**: Warn the user via a confirmation modal before overwriting manual picks for completed matches.
 
 ## v2 Requirements
 
 Deferred to future releases.
 
-### Advanced Customization
+### Advanced Sync Controls
 
-- **THEME-06**: System Preference Sync (automatic matching of OS light/dark preference).
-- **THEME-07**: Multiple custom accent color schemes (e.g., green pitch, classic blue).
+- **SYNC-05**: Auto-merge bracket: Automatically merge database updates without wiping manual selections.
+- **SYNC-06**: Score variance analyzer: Visual overlay showing point diffs between user picks and live results.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Custom Theme Creator | High complexity, not core to the fan experience |
-| High-Contrast Accessibility Theme | Deferred to subsequent major release |
+| Automatic Silent Sync | Wipes user forecasts without their active choice; bad UX. |
+| Sync other users' sheets | Multi-tenant profile access is outside the scope of this milestone. |
 
 ## Traceability
 
@@ -43,20 +36,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THEME-01 | Phase 1 | Pending |
-| THEME-02 | Phase 1 | Pending |
-| THEME-03 | Phase 1 | Pending |
-| THEME-04 | Phase 1 | Pending |
-| THEME-05 | Phase 1 | Pending |
-| RESP-01  | Phase 1 | Pending |
-| RESP-02  | Phase 1 | Pending |
-| RESP-03  | Phase 1 | Pending |
+| SYNC-01 | Phase 3 | Pending |
+| SYNC-02 | Phase 3 | Pending |
+| SYNC-03 | Phase 3 | Pending |
+| SYNC-04 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 8 total
-- Mapped to phases: 8
+- v1 requirements: 4 total
+- Mapped to phases: 4
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-05-22*
-*Last updated: 2026-05-22 after initial definition*
+*Requirements defined: 2026-07-07*
+*Last updated: 2026-07-07 after initial definition*
