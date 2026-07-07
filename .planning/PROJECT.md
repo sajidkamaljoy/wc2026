@@ -8,6 +8,15 @@ An interactive, premium web application built for soccer fans to follow the 104-
 
 Empower fans with beautiful, real-time, and personalized World Cup insights that adapt flawlessly to their viewing environment and device.
 
+## Current Milestone: v1.1 Bracket Auto-Sync
+
+**Goal:** Enable fans to automatically synchronize their bracket predictions with the latest real-time database knockout fixtures.
+
+**Target features:**
+- UI button in Bracket Challenge to trigger auto-sync
+- Pull actual database match results to resolve completed knockouts in the user's prediction sheet
+- Transition seamlessly from group standings sync to knockout stage progression
+
 ## Requirements
 
 ### Validated
@@ -27,7 +36,10 @@ Empower fans with beautiful, real-time, and personalized World Cup insights that
 
 ### Active
 
-None (Milestone v1.0 features complete!).
+- [ ] **SYNC-01**: Add a "Sync with Real Knockouts" button to the Bracket Challenge interface.
+- [ ] **SYNC-02**: Pull current database knockout results to auto-populate played matches.
+- [ ] **SYNC-03**: Retain user's custom picks for all upcoming/unplayed matches during sync.
+
 
 ### Out of Scope
 
