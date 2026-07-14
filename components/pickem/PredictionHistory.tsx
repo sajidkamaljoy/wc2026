@@ -98,8 +98,12 @@ export function PredictionHistory({ initialPredictions }: Props) {
     switch (matchStatus) {
       case "LIVE":
       case "HALF_TIME":
+      case "EXTRA_TIME":
+      case "PENALTIES":
         return "Live";
       case "FINISHED":
+      case "FINISHED_AET":
+      case "FINISHED_PENS":
         return "Finished";
       default:
         return "Scheduled";
@@ -238,7 +242,7 @@ export function PredictionHistory({ initialPredictions }: Props) {
                 const homeScorePens = liveData?.homeScorePens ?? pred.match.homeScorePens;
                 const awayScorePens = liveData?.awayScorePens ?? pred.match.awayScorePens;
                 const status = liveData?.status ?? pred.match.status;
-                const isLive = status === "LIVE" || status === "HALF_TIME";
+                const isLive = status === "LIVE" || status === "HALF_TIME" || status === "EXTRA_TIME" || status === "PENALTIES";
                 
                 return (
                   <div

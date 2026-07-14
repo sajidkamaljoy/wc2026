@@ -158,4 +158,72 @@ describe("gradePredictionsForMatch", () => {
       data: { pointsEarned: 0 },
     });
   });
+
+  it("should NOT grade predictions for a match that is not yet FINISHED (regression: AET pending bug)", async () => {
+    // Simulates the race condition where scores are updated mid-extra-time
+    // but status hasn't transitioned to FINISHED yet.
+    const mockMatch = {
+      id: "match-80",
+      matchNumber: 80,
+      stage: "SEMI_FINAL",
+      homeScore: 1,
+      awayScore: 1,
+      homeScoreET: 2, // ET scores present but match still "LIVE"
+      awayScoreET: 1,
+      homeScorePens: null,
+      awayScorePens: null,
+      status: "LIVE", // Not finished yet
+    };
+
+    vi.mocked(prisma.match.findUnique).mockResolvedValue(mockMatch as any);
+
+    await gradePredictionsForMatch("match-80");
+
+    // Must NOT grade since the match isn't finished
+    expect(prisma.prediction.findMany).not.toHaveBeenCalled();
+    expect(prisma.prediction.update).not.toHaveBeenCalled();
+  });
+
+  it("should grade predictions correctly for an AET match where user predicted the 90-min draw score (regression: AET pending bug)", async () => {
+    // The canonical AET scenario: 1-1 at 90 min → 2-1 at AET → Home wins.
+    // Users who predicted 1-1 should get exact score (+3).
+    // Users who predicted home win should get outcome (+1).
+    const mockMatch = {
+      id: "match-74",
+      matchNumber: 74,
+      stage: "QUARTER_FINAL",
+      homeScore: 1,     // 90-min score
+      awayScore: 1,
+      homeScoreET: 2,   // AET score (winner decided here)
+      awayScoreET: 1,
+      homeScorePens: null,
+      awayScorePens: null,
+      status: "FINISHED",
+    };
+
+    const mockPredictions = [
+      { id: "pred-a", userId: "user-a", homeScore: 1, awayScore: 1, pointsEarned: null }, // Exact 90-min score → +3
+      { id: "pred-b", userId: "user-b", homeScore: 2, awayScore: 0, pointsEarned: null }, // Home win predicted → +1 (outcome correct)
+      { id: "pred-c", userId: "user-c", homeScore: 0, awayScore: 2, pointsEarned: null }, // Away win predicted → 0
+    ];
+
+    vi.mocked(prisma.match.findUnique).mockResolvedValue(mockMatch as any);
+    vi.mocked(prisma.prediction.findMany).mockResolvedValue(mockPredictions as any);
+
+    await gradePredictionsForMatch("match-74");
+
+    expect(prisma.prediction.update).toHaveBeenCalledWith({
+      where: { id: "pred-a" },
+      data: { pointsEarned: 3 }, // Exact 90-min score
+    });
+    expect(prisma.prediction.update).toHaveBeenCalledWith({
+      where: { id: "pred-b" },
+      data: { pointsEarned: 1 }, // Correct winner via AET
+    });
+    expect(prisma.prediction.update).toHaveBeenCalledWith({
+      where: { id: "pred-c" },
+      data: { pointsEarned: 0 }, // Wrong winner
+    });
+  });
 });
+

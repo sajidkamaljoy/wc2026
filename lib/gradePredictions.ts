@@ -11,8 +11,12 @@ export async function gradePredictionsForMatch(matchId: string) {
     where: { id: matchId },
   });
 
-  if (!match || match.status !== "FINISHED" || match.homeScore === null || match.awayScore === null) {
-    console.log(`[GradePredictions] Match ${matchId} is not finished or lacks scores.`);
+  // Accept any status that represents a completed match.
+  // football-data.org always sends "FINISHED" for AET/pens, but guard against
+  // potential variants that could slip through the status mapper.
+  const FINISHED_STATUSES = ["FINISHED", "FINISHED_AET", "FINISHED_PENS"];
+  if (!match || !FINISHED_STATUSES.includes(match.status) || match.homeScore === null || match.awayScore === null) {
+    console.log(`[GradePredictions] Match ${matchId} is not finished or lacks scores. Status: ${match?.status}`);
     return;
   }
 
