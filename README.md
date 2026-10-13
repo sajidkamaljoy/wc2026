@@ -1,5 +1,7 @@
 # FIFA World Cup 2026 Fan Companion
 
+[![CI](https://github.com/sajidkamaljoy/wc2026/actions/workflows/ci.yml/badge.svg)](https://github.com/sajidkamaljoy/wc2026/actions/workflows/ci.yml)
+
 **Live site: [fifawc2026.me](https://fifawc2026.me)**
 
 A full-stack fan companion for the FIFA World Cup 2026. Follow fixtures and live scores, track group standings, predict the knockout bracket, play Pick'em against other fans and see how each team's fans are feeling.
